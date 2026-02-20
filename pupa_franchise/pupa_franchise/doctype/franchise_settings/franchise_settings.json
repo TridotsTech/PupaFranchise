@@ -1,0 +1,81 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-18 11:25:39.002544",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "api_tab",
+  "url",
+  "headers",
+  "hq_details_tab",
+  "hq_company",
+  "column_break_kkaa",
+  "default_franchise_company"
+ ],
+ "fields": [
+  {
+   "fieldname": "url",
+   "fieldtype": "Data",
+   "label": "URL"
+  },
+  {
+   "fieldname": "headers",
+   "fieldtype": "Table",
+   "label": "Headers",
+   "options": "API Header"
+  },
+  {
+   "fieldname": "api_tab",
+   "fieldtype": "Tab Break",
+   "label": "API"
+  },
+  {
+   "fieldname": "hq_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "HQ Details"
+  },
+  {
+   "fieldname": "hq_company",
+   "fieldtype": "Link",
+   "label": "HQ Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "column_break_kkaa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "default_franchise_company",
+   "fieldtype": "Link",
+   "label": "Default Franchise Company",
+   "options": "Company"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-02-20 16:34:11.708064",
+ "modified_by": "Administrator",
+ "module": "Pupa Franchise",
+ "name": "Franchise Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

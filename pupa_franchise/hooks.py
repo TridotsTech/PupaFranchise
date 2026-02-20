@@ -145,6 +145,19 @@ app_license = "mit"
 # 	}
 # }
 
+doc_events = {
+    "Supplier": {
+        "after_insert": [
+            "pupa_franchise.api.api_sync.create_franchise_supplier_to_pupa_customer"
+        ]
+    },
+    "Purchase Order": {
+        "on_submit": [
+            "pupa_franchise.api.api_sync.create_so_from_franchise_po"
+        ]
+    }
+}
+
 # Scheduled Tasks
 # ---------------
 
