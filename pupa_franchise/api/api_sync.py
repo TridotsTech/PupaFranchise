@@ -196,3 +196,60 @@ def create_so_from_franchise_po(doc, method):
         )
         frappe.throw(f"Error syncing PO to Pupa Sales Order: {str(e)}")
         
+
+
+@frappe.whitelist()
+def create_purchase_receipt(supplier=None, company=None, posting_date=None, custom_sales_invoice_id=None, items=None):
+    try:
+        frappe.log_error("Create Purchase Receipt Called", f"Supplier: {supplier}, Bill No: {custom_sales_invoice_id}")
+
+        if not supplier:
+            frappe.throw("Supplier is required")
+
+        pupa_supplier = frappe.db.get_single_value("Franchise Settings", "default_supplier")
+        frappe.log_error("Def Supplier", pupa_supplier)
+
+        if not items:
+            frappe.throw("Items are required")
+
+        if isinstance(items, str):
+            items = json.loads(items)
+
+        pr = frappe.new_doc("Purchase Receipt")
+        pr.supplier = pupa_supplier
+        pr.company = company
+        pr.posting_date = posting_date
+        pr.custom_sales_invoice_id = custom_sales_invoice_id
+
+        for item in items:
+            default_warehouse = frappe.db.get_value(
+                "Item Default",
+                {"parent": item.get("item_code"), "company": company},
+                "default_warehouse"
+            )
+
+            pr.append("items", {
+                "item_code": item.get("item_code"),
+                "item_name": item.get("item_name"),
+                "qty": item.get("qty"),
+                "uom": item.get("uom"),
+                "rate": item.get("rate"),
+                "amount": item.get("amount"),
+                "warehouse": default_warehouse
+            })
+
+        pr.flags.ignore_mandatory = True
+        pr.insert(ignore_permissions=True)
+        # No submit — stays Draft
+        frappe.db.commit()
+
+        frappe.log_error("Purchase Receipt Created", pr.name)
+
+        return {"message": pr.name}
+
+    except Exception as e:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Create Purchase Receipt Error"
+        )
+        frappe.throw(f"Error creating Purchase Receipt: {str(e)}")

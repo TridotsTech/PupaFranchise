@@ -10,6 +10,7 @@
   "headers",
   "hq_details_tab",
   "hq_company",
+  "default_supplier",
   "column_break_kkaa",
   "default_franchise_company"
  ],
@@ -50,13 +51,19 @@
    "fieldtype": "Link",
    "label": "Default Franchise Company",
    "options": "Company"
+  },
+  {
+   "fieldname": "default_supplier",
+   "fieldtype": "Link",
+   "label": "Default Supplier",
+   "options": "Supplier"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-02-20 16:34:11.708064",
+ "modified": "2026-02-23 11:19:33.748013",
  "modified_by": "Administrator",
  "module": "Pupa Franchise",
  "name": "Franchise Settings",
