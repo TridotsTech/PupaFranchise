@@ -357,3 +357,221 @@ def approve_purchase_invoice(purchase_invoice_name=None):
             title="Approve Purchase Invoice Error"
         )
         frappe.throw(f"Error approving Purchase Invoice: {str(e)}")
+
+
+
+import frappe
+import json
+
+
+@frappe.whitelist(allow_guest=True)
+def create_or_update_pricing_rule(**kwargs):
+    """Receive a Pricing Rule from HO and create or update it in the Franchise instance."""
+    try:
+        ho_pricing_rule_id = kwargs.get("custom_ho_pricing_rule_id")
+        if not ho_pricing_rule_id:
+            frappe.throw("ho_pricing_rule_id is required")
+
+        # Parse child table data if passed as strings
+        items = kwargs.get("items") or []
+        item_groups = kwargs.get("item_groups") or []
+        brands = kwargs.get("brands") or []
+
+        if isinstance(items, str):
+            items = json.loads(items)
+        if isinstance(item_groups, str):
+            item_groups = json.loads(item_groups)
+        if isinstance(brands, str):
+            brands = json.loads(brands)
+
+        # Check if a Pricing Rule with this HO ID already exists
+        existing = frappe.db.get_value(
+            "Pricing Rule",
+            {"custom_ho_pricing_rule_id": ho_pricing_rule_id},
+            "name"
+        )
+
+        franchise_company = frappe.db.get_single_value("Franchise Settings", "default_franchise_company")
+
+        if existing:
+            pr = frappe.get_doc("Pricing Rule", existing)
+        else:
+            pr = frappe.new_doc("Pricing Rule")
+            pr.custom_ho_pricing_rule_id = ho_pricing_rule_id
+
+        # Set all fields from the payload
+        pr.title = kwargs.get("title")
+        pr.apply_on = kwargs.get("apply_on", "Item Code")
+        pr.price_or_product_discount = kwargs.get("price_or_product_discount", "Price")
+        pr.selling = int(kwargs.get("selling", 0))
+        pr.buying = int(kwargs.get("buying", 0))
+        pr.applicable_for = kwargs.get("applicable_for") or ""
+        pr.customer = kwargs.get("customer") or ""
+        pr.customer_group = kwargs.get("customer_group") or ""
+        pr.territory = kwargs.get("territory") or ""
+        pr.sales_partner = kwargs.get("sales_partner") or ""
+        pr.campaign = kwargs.get("campaign") or ""
+        pr.supplier = kwargs.get("supplier") or ""
+        pr.supplier_group = kwargs.get("supplier_group") or ""
+        pr.min_qty = float(kwargs.get("min_qty", 0))
+        pr.max_qty = float(kwargs.get("max_qty", 0))
+        pr.min_amt = float(kwargs.get("min_amt", 0))
+        pr.max_amt = float(kwargs.get("max_amt", 0))
+        pr.valid_from = kwargs.get("valid_from") or None
+        pr.valid_upto = kwargs.get("valid_upto") or None
+        pr.company = franchise_company
+        pr.currency = kwargs.get("currency") or "INR"
+        pr.rate_or_discount = kwargs.get("rate_or_discount") or ""
+        pr.rate = float(kwargs.get("rate", 0))
+        pr.discount_percentage = float(kwargs.get("discount_percentage", 0))
+        pr.discount_amount = float(kwargs.get("discount_amount", 0))
+        pr.for_price_list = kwargs.get("for_price_list") or ""
+        pr.margin_type = kwargs.get("margin_type") or ""
+        pr.margin_rate_or_amount = float(kwargs.get("margin_rate_or_amount", 0))
+        pr.apply_discount_on = kwargs.get("apply_discount_on") or ""
+        pr.warehouse = kwargs.get("warehouse") or ""
+        pr.condition = kwargs.get("condition") or ""
+        pr.disable = int(kwargs.get("disable", 0))
+        pr.mixed_conditions = int(kwargs.get("mixed_conditions", 0))
+        pr.is_cumulative = int(kwargs.get("is_cumulative", 0))
+        pr.apply_multiple_pricing_rules = int(kwargs.get("apply_multiple_pricing_rules", 0))
+        pr.apply_discount_on_rate = int(kwargs.get("apply_discount_on_rate", 0))
+        pr.has_priority = int(kwargs.get("has_priority", 0))
+        pr.priority = kwargs.get("priority") or ""
+        pr.apply_rule_on_other = kwargs.get("apply_rule_on_other") or ""
+        pr.other_item_code = kwargs.get("other_item_code") or ""
+        pr.other_item_group = kwargs.get("other_item_group") or ""
+        pr.other_brand = kwargs.get("other_brand") or ""
+        pr.same_item = int(kwargs.get("same_item", 0))
+        pr.free_item = kwargs.get("free_item") or ""
+        pr.free_qty = float(kwargs.get("free_qty", 0))
+        pr.free_item_uom = kwargs.get("free_item_uom") or ""
+        pr.free_item_rate = float(kwargs.get("free_item_rate", 0))
+        pr.is_recursive = int(kwargs.get("is_recursive", 0))
+        pr.recurse_for = float(kwargs.get("recurse_for", 0))
+        pr.apply_recursion_over = float(kwargs.get("apply_recursion_over", 0))
+
+        # Clear and re-add child tables
+        pr.items = []
+        for item in items:
+            pr.append("items", {
+                "item_code": item.get("item_code"),
+                "uom": item.get("uom")
+            })
+
+        pr.item_groups = []
+        for ig in item_groups:
+            pr.append("item_groups", {
+                "item_group": ig.get("item_group"),
+                "uom": ig.get("uom")
+            })
+
+        pr.brands = []
+        for b in brands:
+            pr.append("brands", {
+                "brand": b.get("brand")
+            })
+
+        pr.flags.ignore_permissions = True
+        pr.flags.ignore_mandatory = True
+        pr.save()
+        frappe.db.commit()
+
+        action = "updated" if existing else "created"
+        frappe.log_error(
+            f"Pricing Rule {action}: {pr.name} (HO ID: {ho_pricing_rule_id})",
+            "Franchise Pricing Rule Sync"
+        )
+
+        # If this was an update, recalculate draft POs/SOs using this pricing rule
+        if existing:
+            update_draft_transactions_for_pricing_rule(pr.name)
+
+        return {"message": f"Pricing Rule {action} successfully", "name": pr.name}
+
+    except Exception as e:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Franchise Pricing Rule Sync Error"
+        )
+        frappe.throw(f"Error creating/updating Pricing Rule: {str(e)}")
+
+
+def update_draft_transactions_for_pricing_rule(pricing_rule_name):
+    """Update draft Purchase Orders and Sales Orders that reference the given Pricing Rule."""
+    try:
+        pr = frappe.get_doc("Pricing Rule", pricing_rule_name)
+        updated_docs = []
+
+        for doctype, child_doctype in [
+            ("Purchase Order", "Purchase Order Item"),
+            ("Sales Order", "Sales Order Item")
+        ]:
+            # Find draft item rows that reference this pricing rule
+            affected_items = frappe.db.sql("""
+                SELECT child.name, child.parent, child.price_list_rate, child.qty
+                FROM `tab{child_dt}` child
+                INNER JOIN `tab{parent_dt}` parent ON parent.name = child.parent
+                WHERE child.pricing_rules LIKE %s
+                AND parent.docstatus = 0
+            """.format(child_dt=child_doctype, parent_dt=doctype),
+                (f'%"{pricing_rule_name}"%',),
+                as_dict=True
+            )
+
+            if not affected_items:
+                continue
+
+            # Group by parent document
+            parent_names = list(set(item.parent for item in affected_items))
+
+            for parent_name in parent_names:
+                doc = frappe.get_doc(doctype, parent_name)
+
+                for item in doc.items:
+                    if not item.pricing_rules:
+                        continue
+
+                    try:
+                        item_pricing_rules = json.loads(item.pricing_rules)
+                    except (json.JSONDecodeError, TypeError):
+                        continue
+
+                    if pricing_rule_name not in item_pricing_rules:
+                        continue
+
+                    # Update discount values based on pricing rule type
+                    price_list_rate = item.price_list_rate or item.rate or 0
+
+                    if pr.rate_or_discount == "Discount Percentage":
+                        item.discount_percentage = pr.discount_percentage
+                        item.discount_amount = 0
+                        item.rate = price_list_rate * (1 - (pr.discount_percentage / 100))
+                    elif pr.rate_or_discount == "Discount Amount":
+                        item.discount_amount = pr.discount_amount
+                        item.discount_percentage = 0
+                        item.rate = price_list_rate - pr.discount_amount
+                    elif pr.rate_or_discount == "Rate":
+                        item.rate = pr.rate
+                        item.discount_percentage = 0
+                        item.discount_amount = 0
+
+                    item.amount = item.qty * item.rate
+
+                doc.flags.ignore_permissions = True
+                doc.flags.ignore_mandatory = True
+                doc.save()
+                updated_docs.append(f"{doctype}: {parent_name}")
+
+        if updated_docs:
+            frappe.db.commit()
+            frappe.log_error(
+                f"Updated draft documents for Pricing Rule '{pricing_rule_name}': {', '.join(updated_docs)}",
+                "Pricing Rule Draft Update"
+            )
+
+    except Exception as e:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Draft Transaction Update Error"
+        )
