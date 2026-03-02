@@ -58,6 +58,22 @@ def create_item_group(item_group_name=None, parent_item_group=None, is_group=Non
 
         return item_grp.name
 
+@frappe.whitelist()
+def create_supplier(supplier_name=None, supplier_type=None):
+    frappe.log_error("Supplier Func Called")
+    if not supplier_name or not supplier_type:
+        return 
+
+    if not frappe.db.exists("Supplier", supplier_name):
+        supplier = frappe.new_doc("Supplier")
+        supplier.supplier_name = supplier_name
+        supplier.supplier_type = supplier_type
+
+        supplier.insert(ignore_permissions=True)
+        frappe.db.commit()
+
+        return supplier.name
+
 
 # def create_franchise_supplier_to_pupa_customer(doc, method):
 #     try:
