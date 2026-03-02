@@ -8,7 +8,7 @@
  "field_order": [
   "employee",
   "column_break_uwwf",
-  "discount_percent"
+  "commission_percentage"
  ],
  "fields": [
   {
@@ -23,17 +23,17 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "discount_percent",
+   "fieldname": "commission_percentage",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Discount Percent"
+   "label": "Commission Percentage"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-03-02 13:45:27.811915",
+ "modified": "2026-03-02 14:46:28.043897",
  "modified_by": "Administrator",
  "module": "Pupa Franchise",
  "name": "Influencer Discount Details",

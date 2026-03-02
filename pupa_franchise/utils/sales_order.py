@@ -14,7 +14,7 @@ def create_pi_for_influencer_so(so_name):
     if not so.custom_do_you_have_any_influencer:
         return 
 
-    influencer_rows = so.get("custom_influencer_discount_details")
+    influencer_rows = so.get("custom_influencer_commission_details")
 
     if not influencer_rows:
         frappe.msgprint("No influencer discount details found.", alert=True)
@@ -23,18 +23,18 @@ def create_pi_for_influencer_so(so_name):
     created_invoices = []
 
     for row in influencer_rows:
-        if not row.employee or not row.discount_percent:
+        if not row.employee or not row.commission_percentage:
             continue
 
         supplier_name = get_or_create_supplier_from_employee(row.employee)
-        discount_prct = flt(row.discount_percent)
+        commission_prct = flt(row.commission_percentage)
         grand_total = flt(so.grand_total)
-        discounted_amount = grand_total - (grand_total * discount_prct) / 100
+        commission_amount = (grand_total * commission_prct) / 100
 
         pi_items = []
         for item in so.items:
             item_rate = flt(item.rate)
-            discounted_rate = item_rate - (item_rate * discount_prct) / 100
+            commission_rate = (item_rate * commission_prct) / 100
 
             pi_items.append({
                 "doctype": "Purchase Invoice Item",
@@ -43,8 +43,8 @@ def create_pi_for_influencer_so(so_name):
                 "description": item.description or item.item_name,
                 "qty": flt(item.qty),
                 "uom": item.uom,
-                "rate": discounted_rate,
-                "amount": discounted_rate * flt(item.qty),
+                "rate": commission_rate,
+                "amount": commission_rate * flt(item.qty),
                 "cost_center": frappe.db.get_value(
                     "Company", so.company, "cost_center"
                 ),
@@ -65,7 +65,7 @@ def create_pi_for_influencer_so(so_name):
 
         frappe.msgprint(
             f"Purchase Invoice <b>{pi.name}</b> created for Supplier <b>{supplier_name}</b> "
-            f"with {discount_prct}% discount (Amount: {discounted_amount}).",
+            f"with {commission_prct}% discount (Amount: {commission_amount}).",
             alert=True
         )
 
