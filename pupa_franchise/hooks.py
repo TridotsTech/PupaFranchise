@@ -155,6 +155,11 @@ doc_events = {
         "on_submit": [
             "pupa_franchise.api.api_sync.create_so_from_franchise_po"
         ]
+    },
+    "Sales Order": {
+        "before_submit": [
+            "pupa_franchise.utils.sales_order.on_submit"
+        ]
     }
 }
 
