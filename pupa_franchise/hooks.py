@@ -43,7 +43,9 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {
+    "Purchase Order":"public/js/purchase_order.js"
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -158,7 +160,7 @@ doc_events = {
     },
     "Sales Order": {
         "before_submit": [
-            "pupa_franchise.utils.sales_order.on_submit"
+            "pupa_franchise.utils.py.sales_order.on_submit"
         ]
     }
 }

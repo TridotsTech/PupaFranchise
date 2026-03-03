@@ -75,6 +75,29 @@ def create_supplier(supplier_name=None, supplier_type=None):
         return supplier.name
 
 
+@frappe.whitelist()
+def get_stock_from_pupa(supplier):
+    try:
+        base_url, headers = get_api_settings()
+        get_url = f"{base_url}/api/method/pupa.api.franchise.get_branch_stock"
+
+        response = requests.get(
+            url = get_url,
+            headers = headers,
+            params = {"branch_name": supplier}
+        )
+
+        if response.status_code != 200:
+            frappe.throw("Error connecting to Pupa")
+
+        return response.json().get("message", [])
+
+    except Exception as e:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Pupa Branch Stock Error"
+        )
+
 # def create_franchise_supplier_to_pupa_customer(doc, method):
 #     try:
 #         base_url, headers = get_api_settings()
