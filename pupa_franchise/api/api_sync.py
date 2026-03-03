@@ -74,6 +74,29 @@ def create_supplier(supplier_name=None, supplier_type=None):
 
         return supplier.name
 
+@frappe.whitelist()
+def create_company(company_name=None):
+    frappe.log_error("Company Func Called")
+    if not company_name:
+        return
+
+    settings = frappe.get_single("System Settings")
+    default_currency = settings.currency
+    country = settings.country
+
+    if not frappe.db.exists("Company", company_name):
+        company = frappe.new_doc("Company")
+        company.company_name = company_name
+        company.default_currency = default_currency
+        company.country = country
+        company.gst_category = "Unregistered"
+
+        company.insert(ignore_permissions=True)
+        company.flags.ignore_mandatory = True
+
+        frappe.db.commit()
+
+        return company.name
 
 @frappe.whitelist()
 def get_stock_from_pupa(supplier):
@@ -185,8 +208,10 @@ def create_so_from_franchise_po(doc, method):
         settings = frappe.get_single("Franchise Settings")
         base_url, headers = get_api_settings()
 
+
+
         payload = {
-            "customer": doc.supplier,
+            "customer": doc.company,
             "company": settings.hq_company,
             "transaction_date": str(doc.transaction_date),
             "delivery_date": str(doc.schedule_date) if doc.schedule_date else str(doc.transaction_date),
@@ -296,16 +321,14 @@ def create_purchase_receipt(supplier=None, company=None, posting_date=None, cust
 
 
 @frappe.whitelist()
-def create_purchase_invoice(supplier=None, company=None, posting_date=None, due_date=None, custom_sales_invoice_id=None, items=None):
+def create_purchase_invoice(company=None, posting_date=None, due_date=None, 
+    custom_sales_invoice_id=None, custom_franchise_po_id=None, 
+    items=None):
+
     """Receive SI payload from HO and create a draft Purchase Invoice in Franchise."""
     try:
-        frappe.log_error("Create Purchase Invoice Called", f"Supplier: {supplier}, SI: {custom_sales_invoice_id}")
-
-        if not supplier:
-            frappe.throw("Supplier is required")
-
-        pupa_supplier = frappe.db.get_single_value("Franchise Settings", "default_supplier")
-        frappe.log_error("Def Supplier", pupa_supplier)
+        supplier_data = frappe.db.get_value("Purchase Order", {"name": custom_franchise_po_id}, "supplier")
+        frappe.log_error("Supplier Name from PO", supplier_data)
 
         if not items:
             frappe.throw("Items are required")
@@ -314,7 +337,7 @@ def create_purchase_invoice(supplier=None, company=None, posting_date=None, due_
             items = json.loads(items)
 
         pi = frappe.new_doc("Purchase Invoice")
-        pi.supplier = pupa_supplier
+        pi.supplier = supplier_data
         pi.company = company
         pi.posting_date = posting_date
         pi.due_date = due_date or posting_date
