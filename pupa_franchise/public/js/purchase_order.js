@@ -5,6 +5,15 @@ frappe.ui.form.on("Purchase Order", {
 
 frappe.ui.form.on("Purchase Order Item", {
     item_code: function (frm, cdt, cdn) {
+        if (!frm.doc.supplier) {
+            frappe.msgprint({
+                title: __("Missing Supplier"),
+                message: __("Please select Supplier before selecting Item."),
+                indicator: "orange"
+            });
+            return;
+        }
+
         let row = locals[cdt][cdn];
         frappe.call({
             method: "pupa_franchise.api.api_sync.get_stock_from_pupa",
