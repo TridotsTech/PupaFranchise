@@ -560,80 +560,108 @@ def create_or_update_pricing_rule(**kwargs):
 
 
 def update_draft_transactions_for_pricing_rule(pricing_rule_name):
-    """Update draft Purchase Orders and Sales Orders that reference the given Pricing Rule."""
+    """Enqueue a background job to update draft Purchase Orders
+    when a Pricing Rule with buying=1 is changed."""
     try:
         pr = frappe.get_doc("Pricing Rule", pricing_rule_name)
-        updated_docs = []
 
-        for doctype, child_doctype in [
-            ("Purchase Order", "Purchase Order Item"),
-            ("Sales Order", "Sales Order Item")
-        ]:
-            # Find draft item rows that reference this pricing rule
-            affected_items = frappe.db.sql("""
-                SELECT child.name, child.parent, child.price_list_rate, child.qty
-                FROM `tab{child_dt}` child
-                INNER JOIN `tab{parent_dt}` parent ON parent.name = child.parent
-                WHERE child.pricing_rules LIKE %s
-                AND parent.docstatus = 0
-            """.format(child_dt=child_doctype, parent_dt=doctype),
-                (f'%"{pricing_rule_name}"%',),
-                as_dict=True
-            )
+        if not pr.buying:
+            return
 
-            if not affected_items:
-                continue
+        item_codes = [row.item_code for row in (pr.get("items") or []) if row.item_code]
+        if not item_codes:
+            return
 
-            # Group by parent document
-            parent_names = list(set(item.parent for item in affected_items))
+        # Check if any draft POs exist with these items before enqueuing
+        po_exists = frappe.db.sql("""
+            SELECT 1 FROM `tabPurchase Order Item`
+            WHERE item_code IN %s AND docstatus = 0
+            LIMIT 1
+        """, (item_codes,))
 
-            for parent_name in parent_names:
-                doc = frappe.get_doc(doctype, parent_name)
+        if not po_exists:
+            return
 
-                for item in doc.items:
-                    if not item.pricing_rules:
-                        continue
+        frappe.enqueue(
+            "pupa_franchise.api.api_sync._update_draft_pos_for_pricing_rule",
+            queue="long",
+            pricing_rule_name=pricing_rule_name,
+            now=frappe.flags.in_test
+        )
 
-                    try:
-                        item_pricing_rules = json.loads(item.pricing_rules)
-                    except (json.JSONDecodeError, TypeError):
-                        continue
-
-                    if pricing_rule_name not in item_pricing_rules:
-                        continue
-
-                    # Update discount values based on pricing rule type
-                    price_list_rate = item.price_list_rate or item.rate or 0
-
-                    if pr.rate_or_discount == "Discount Percentage":
-                        item.discount_percentage = pr.discount_percentage
-                        item.discount_amount = 0
-                        item.rate = price_list_rate * (1 - (pr.discount_percentage / 100))
-                    elif pr.rate_or_discount == "Discount Amount":
-                        item.discount_amount = pr.discount_amount
-                        item.discount_percentage = 0
-                        item.rate = price_list_rate - pr.discount_amount
-                    elif pr.rate_or_discount == "Rate":
-                        item.rate = pr.rate
-                        item.discount_percentage = 0
-                        item.discount_amount = 0
-
-                    item.amount = item.qty * item.rate
-
-                doc.flags.ignore_permissions = True
-                doc.flags.ignore_mandatory = True
-                doc.save()
-                updated_docs.append(f"{doctype}: {parent_name}")
-
-        if updated_docs:
-            frappe.db.commit()
-            frappe.log_error(
-                f"Updated draft documents for Pricing Rule '{pricing_rule_name}': {', '.join(updated_docs)}",
-                "Pricing Rule Draft Update"
-            )
-
-    except Exception as e:
+    except Exception:
         frappe.log_error(
             message=frappe.get_traceback(),
-            title="Draft Transaction Update Error"
+            title="Draft PO Update Enqueue Error"
+        )
+
+
+def _update_draft_pos_for_pricing_rule(pricing_rule_name):
+    """Background job: update rates in all draft Purchase Orders
+    affected by the given Pricing Rule (only when buying=1)."""
+    try:
+        pr = frappe.get_doc("Pricing Rule", pricing_rule_name)
+
+        if not pr.buying:
+            return
+
+        item_codes = [row.item_code for row in (pr.get("items") or []) if row.item_code]
+        if not item_codes:
+            return
+
+        # Find all draft POs containing these items
+        po_items = frappe.db.sql("""
+            SELECT DISTINCT parent
+            FROM `tabPurchase Order Item`
+            WHERE item_code IN %s
+            AND docstatus = 0
+        """, (item_codes,), as_dict=True)
+
+        if not po_items:
+            return
+
+        po_names = list(set([d.parent for d in po_items]))
+
+        for po_name in po_names:
+            try:
+                po = frappe.get_doc("Purchase Order", po_name)
+                updated = False
+
+                for item in po.items:
+                    if item.item_code in item_codes:
+                        base_rate = item.price_list_rate or item.custom_mrp or 0
+                        new_rate = None
+
+                        if pr.rate_or_discount == "Discount Percentage" and pr.discount_percentage:
+                            new_rate = base_rate * (1 - pr.discount_percentage / 100)
+                        elif pr.rate_or_discount == "Discount Amount" and pr.discount_amount:
+                            new_rate = base_rate - pr.discount_amount
+                        elif pr.rate_or_discount == "Rate" and pr.rate:
+                            new_rate = pr.rate
+
+                        if new_rate is not None:
+                            item.rate = new_rate
+                            updated = True
+
+                if updated:
+                    po.calculate_taxes_and_totals()
+                    po.flags.ignore_permissions = True
+                    po.flags.ignore_mandatory = True
+                    po.save()
+                    frappe.db.commit()
+                    frappe.log_error(
+                        f"Updated draft PO '{po_name}' rates from Pricing Rule '{pr.name}'",
+                        "Pricing Rule PO Update"
+                    )
+
+            except Exception:
+                frappe.log_error(
+                    message=frappe.get_traceback(),
+                    title=f"Error updating PO {po_name} from Pricing Rule"
+                ) 
+
+    except Exception:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Pricing Rule Draft PO Update Error"
         )
