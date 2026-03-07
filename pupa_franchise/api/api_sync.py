@@ -327,8 +327,17 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
 
     """Receive SI payload from HO and create a draft Purchase Invoice in Franchise."""
     try:
-        supplier_data = frappe.db.get_value("Purchase Order", {"name": custom_franchise_po_id}, "supplier")
-        frappe.log_error("Supplier Name from PO", supplier_data)
+        supplier_data = None
+        if custom_franchise_po_id:
+            supplier_data = frappe.db.get_value("Purchase Order", {"name": custom_franchise_po_id}, "supplier")
+        
+        if not supplier_data:
+            supplier_data = frappe.db.get_single_value("Franchise Settings", "default_supplier")
+        
+        frappe.log_error("Supplier Name for PI", supplier_data)
+
+        if not supplier_data:
+            frappe.throw("Supplier could not be determined. Please set a Default Supplier in Franchise Settings or ensure the Purchase Order exists.")
 
         if not items:
             frappe.throw("Items are required")
