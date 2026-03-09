@@ -28,6 +28,10 @@ def create_item(item_code=None, item_name=None, item_group=None, stock_uom=None,
     if not item_code:
         frappe.throw("Item Code is required")
 
+    if item_group and not frappe.db.exists("Item Group", item_group):
+        frappe.log_error("Franchise Item Sync Skipped", f"Item Group '{item_group}' does not exist in franchise")
+        return {"status": "skipped", "reason": f"Item Group '{item_group}' not found"}
+
     if not frappe.db.exists("Item", item_code):
         item = frappe.new_doc("Item")
         item.item_code = item_code
@@ -40,12 +44,17 @@ def create_item(item_code=None, item_name=None, item_group=None, stock_uom=None,
 
         return item.name
 
+    return {"status": "skipped", "reason": "Item already exists"}
+
 @frappe.whitelist()
-def create_item_group(item_group_name=None, parent_item_group=None, is_group=None):
+def create_item_group(item_group_name=None, parent_item_group=None, is_group=None, franchise_group=None):
     frappe.log_error("Func Called IG")
 
     if not item_group_name:
         frappe.throw("Item Group is Required!")
+
+    if not franchise_group or int(franchise_group) != 1:
+        return {"status": "skipped", "reason": "Not a franchise item group"}
 
     if not frappe.db.exists("Item Group", item_group_name):
         item_grp = frappe.new_doc("Item Group")
@@ -58,26 +67,46 @@ def create_item_group(item_group_name=None, parent_item_group=None, is_group=Non
 
         return item_grp.name
 
+    return {"status": "skipped", "reason": "Item Group already exists"}
+
+# @frappe.whitelist()
+# def create_supplier(supplier_name=None, supplier_type=None):
+#     frappe.log_error("Supplier Func Called")
+#     if not supplier_name or not supplier_type:
+#         return 
+
+#     if not frappe.db.exists("Supplier", supplier_name):
+#         supplier = frappe.new_doc("Supplier")
+#         supplier.supplier_name = supplier_name
+#         supplier.supplier_type = supplier_type
+
+#         supplier.insert(ignore_permissions=True)
+#         frappe.db.commit()
+
+#         return supplier.name
+
+
 @frappe.whitelist()
-def create_supplier(supplier_name=None, supplier_type=None):
-    frappe.log_error("Supplier Func Called")
-    if not supplier_name or not supplier_type:
-        return 
+def create_branch(branch_name=None):
+    frappe.log_error("branch Func called")
+    if not branch_name:
+        return
 
-    if not frappe.db.exists("Supplier", supplier_name):
-        supplier = frappe.new_doc("Supplier")
-        supplier.supplier_name = supplier_name
-        supplier.supplier_type = supplier_type
+    if not frappe.db.exists("Branch", branch_name):
+        branch = frappe.new_doc("Branch")
+        branch.branch = branch_name
 
-        supplier.insert(ignore_permissions=True)
+        branch.insert(ignore_permissions=True)
         frappe.db.commit()
 
-        return supplier.name
+        return branch.name
+    
+
 
 @frappe.whitelist()
-def create_company(company_name=None):
+def create_company(company_name=None, branch_name=None):
     frappe.log_error("Company Func Called")
-    if not company_name:
+    if not company_name or not branch_name:
         return
 
     settings = frappe.get_single("System Settings")
@@ -89,6 +118,7 @@ def create_company(company_name=None):
         company.company_name = company_name
         company.default_currency = default_currency
         company.country = country
+        company.custom_branch = branch_name
         company.gst_category = "Unregistered"
 
         company.insert(ignore_permissions=True)
@@ -99,7 +129,7 @@ def create_company(company_name=None):
         return company.name
 
 @frappe.whitelist()
-def get_stock_from_pupa(supplier):
+def get_stock_from_pupa(branch):
     try:
         base_url, headers = get_api_settings()
         get_url = f"{base_url}/api/method/pupa.api.franchise.get_branch_stock"
@@ -107,7 +137,7 @@ def get_stock_from_pupa(supplier):
         response = requests.get(
             url = get_url,
             headers = headers,
-            params = {"branch_name": supplier}
+            params = {"branch_name": branch}
         )
 
         if response.status_code != 200:
