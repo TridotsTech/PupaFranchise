@@ -23,10 +23,11 @@ def create_pi_for_influencer_so(so_name):
     created_invoices = []
 
     for row in influencer_rows:
-        if not row.employee or not row.commission_percentage:
+        if not row.supplier or not row.commission_percentage:
             continue
 
-        supplier_name = get_or_create_supplier_from_employee(row.employee)
+        # supplier_name = get_or_create_supplier_from_employee(row.employee)
+        supplier_name = row.supplier
         commission_prct = flt(row.commission_percentage)
         grand_total = flt(so.grand_total)
         commission_amount = (grand_total * commission_prct) / 100
@@ -72,31 +73,31 @@ def create_pi_for_influencer_so(so_name):
     return created_invoices
 
 
-def get_or_create_supplier_from_employee(emp_id):
-    employee = frappe.get_doc("Employee", emp_id)
-    emp_name = employee.employee_name
+# def get_or_create_supplier_from_employee(emp_id):
+#     employee = frappe.get_doc("Employee", emp_id)
+#     emp_name = employee.employee_name
 
-    existing_supplier = frappe.db.get_value(
-        "Supplier",
-        {"supplier_name": emp_name},
-        "name"
-    )
+#     existing_supplier = frappe.db.get_value(
+#         "Supplier",
+#         {"supplier_name": emp_name},
+#         "name"
+#     )
 
-    if existing_supplier:
-        return existing_supplier
+#     if existing_supplier:
+#         return existing_supplier
 
-    supplier = frappe.new_doc("Supplier")
-    supplier.supplier_name = emp_name
-    supplier.supplier_group = frappe.db.get_single_value("Buying Settings", "supplier_group") or "All Supplier Groups"
-    supplier.supplier_type = "Individual"
-    supplier.custom_employee = emp_id
-    supplier.insert(ignore_permissions=True)
-    frappe.db.commit()
+#     supplier = frappe.new_doc("Supplier")
+#     supplier.supplier_name = emp_name
+#     supplier.supplier_group = frappe.db.get_single_value("Buying Settings", "supplier_group") or "All Supplier Groups"
+#     supplier.supplier_type = "Individual"
+#     supplier.custom_employee = emp_id
+#     supplier.insert(ignore_permissions=True)
+#     frappe.db.commit()
 
-    frappe.msgprint(
-        f"New Supplier <b>{emp_name}</b> created automatically.",
-        alert=True
-    )
+#     frappe.msgprint(
+#         f"New Supplier <b>{emp_name}</b> created automatically.",
+#         alert=True
+#     )
 
-    return supplier.name
+#     return supplier.name
 
