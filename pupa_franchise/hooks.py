@@ -119,13 +119,35 @@ doctype_js = {
 # -----------
 # Permissions evaluated in scripted ways
 
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
-#
-# has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
-# }
+permission_query_conditions = {
+	"Warehouse": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Sales Order": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Purchase Order": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Sales Invoice": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Purchase Invoice": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Purchase Receipt": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Delivery Note": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Stock Ledger Entry": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Bin": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"GL Entry": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Payment Entry": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Journal Entry": "pupa_franchise.api.permission.get_permission_query_conditions",
+}
+
+has_permission = {
+	"Warehouse": "pupa_franchise.api.permission.has_permission",
+	"Sales Order": "pupa_franchise.api.permission.has_permission",
+	"Purchase Order": "pupa_franchise.api.permission.has_permission",
+	"Sales Invoice": "pupa_franchise.api.permission.has_permission",
+	"Purchase Invoice": "pupa_franchise.api.permission.has_permission",
+	"Purchase Receipt": "pupa_franchise.api.permission.has_permission",
+	"Delivery Note": "pupa_franchise.api.permission.has_permission",
+	"Stock Ledger Entry": "pupa_franchise.api.permission.has_permission",
+	"Bin": "pupa_franchise.api.permission.has_permission",
+	"GL Entry": "pupa_franchise.api.permission.has_permission",
+	"Payment Entry": "pupa_franchise.api.permission.has_permission",
+	"Journal Entry": "pupa_franchise.api.permission.has_permission",
+}
 
 # DocType Class
 # ---------------
