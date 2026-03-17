@@ -28,6 +28,21 @@ def get_permission_query_conditions(user, doctype=None):
         companies_str = ", ".join([frappe.db.escape(c) for c in company_list])
         return f"`tabBin`.warehouse IN (SELECT name FROM tabWarehouse WHERE company IN ({companies_str}))"
 
+    # Handle Customer: filter by Allowed Companies child table
+    if doctype == "Customer":
+        companies_str = ", ".join([frappe.db.escape(c) for c in company_list])
+        return (
+            f"`tabCustomer`.name IN ("
+            f"SELECT parent FROM `tabAllowed Company User Table`"
+            f" WHERE parenttype='Customer' AND company IN ({companies_str})"
+            f")"
+        )
+
+    # Handle Item Price: strict company filter — blank custom_company is hidden from company users
+    if doctype == "Item Price":
+        companies_str = ", ".join([frappe.db.escape(c) for c in company_list])
+        return f"`tabItem Price`.custom_company IN ({companies_str})"
+
     if meta.has_field("company"):
         companies_str = ", ".join([frappe.db.escape(c) for c in company_list])
         return f"`tab{doctype}`.company IN ({companies_str})"
@@ -44,6 +59,19 @@ def has_permission(doc, ptype, user):
         
     company_list = [d.get("doc") for d in allowed_companies]
     
+    # Handle Customer: check Allowed Companies child table
+    if doc.doctype == "Customer":
+        allowed = [row.company for row in doc.get("custom_allowed_companies", [])]
+        if not allowed or not any(c in allowed for c in company_list):
+            return False
+        return True
+
+    # Handle Item Price: strict check — blank or mismatched custom_company is denied
+    if doc.doctype == "Item Price":
+        if not doc.custom_company or doc.custom_company not in company_list:
+            return False
+        return True
+
     if hasattr(doc, "company") and doc.company not in company_list:
         return False
         

@@ -132,6 +132,8 @@ permission_query_conditions = {
 	"GL Entry": "pupa_franchise.api.permission.get_permission_query_conditions",
 	"Payment Entry": "pupa_franchise.api.permission.get_permission_query_conditions",
 	"Journal Entry": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Customer": "pupa_franchise.api.permission.get_permission_query_conditions",
+	"Item Price": "pupa_franchise.api.permission.get_permission_query_conditions",
 }
 
 has_permission = {
@@ -147,6 +149,8 @@ has_permission = {
 	"GL Entry": "pupa_franchise.api.permission.has_permission",
 	"Payment Entry": "pupa_franchise.api.permission.has_permission",
 	"Journal Entry": "pupa_franchise.api.permission.has_permission",
+	"Customer": "pupa_franchise.api.permission.has_permission",
+	"Item Price": "pupa_franchise.api.permission.has_permission",
 }
 
 # DocType Class
@@ -156,6 +160,12 @@ has_permission = {
 # override_doctype_class = {
 # 	"ToDo": "custom_app.overrides.CustomToDo"
 # }
+
+# Override whitelisted methods
+# ------------------------------
+override_whitelisted_methods = {
+	"erpnext.stock.get_item_details.get_item_details": "pupa_franchise.api.item_price.get_item_details",
+}
 
 # Document Events
 # ---------------
