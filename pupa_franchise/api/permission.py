@@ -72,7 +72,7 @@ def has_permission(doc, ptype, user):
             return False
         return True
 
-    if hasattr(doc, "company") and doc.company not in company_list:
+    if doc.get("company") and doc.get("company") not in company_list:
         return False
         
     if doc.doctype == "Bin":
