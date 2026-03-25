@@ -8,17 +8,6 @@
   "api_tab",
   "url",
   "headers",
-  "whatsapp_settings_tab",
-  "enable_whatsapp",
-  "whatsapp_url",
-  "whatsapp_token",
-  "sales_message",
-  "sales_invoice_return",
-  "sales_invoice_print_format",
-  "payment_paid",
-  "payment_receive",
-  "daily_report_message",
-  "report_message_to",
   "hq_details_tab",
   "hq_company",
   "default_supplier",
@@ -41,65 +30,6 @@
    "fieldname": "api_tab",
    "fieldtype": "Tab Break",
    "label": "API"
-  },
-  {
-   "fieldname": "whatsapp_settings_tab",
-   "fieldtype": "Tab Break",
-   "label": "Whatsapp Settings"
-  },
-  {
-   "default": "0",
-   "fieldname": "enable_whatsapp",
-   "fieldtype": "Check",
-   "label": "Enable Whatsapp"
-  },
-  {
-   "fieldname": "whatsapp_url",
-   "fieldtype": "Data",
-   "label": "Whatsapp URL"
-  },
-  {
-   "fieldname": "whatsapp_token",
-   "fieldtype": "Data",
-   "label": "Whatsapp Token"
-  },
-  {
-   "fieldname": "sales_message",
-   "fieldtype": "Small Text",
-   "label": "Sales Invoice Message"
-  },
-  {
-   "fieldname": "sales_invoice_return",
-   "fieldtype": "Small Text",
-   "label": "Sales Invoice Return"
-  },
-  {
-   "fieldname": "sales_invoice_print_format",
-   "fieldtype": "Link",
-   "label": "Sales Invoice Print Format",
-   "link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Sales Invoice\"]]",
-   "options": "Print Format"
-  },
-  {
-   "fieldname": "payment_paid",
-   "fieldtype": "Small Text",
-   "label": "Payment Paid"
-  },
-  {
-   "fieldname": "payment_receive",
-   "fieldtype": "Small Text",
-   "label": "Payment Receive"
-  },
-  {
-   "fieldname": "daily_report_message",
-   "fieldtype": "Small Text",
-   "label": "Daily Report Message"
-  },
-  {
-   "fieldname": "report_message_to",
-   "fieldtype": "Table",
-   "label": "Report Message To",
-   "options": "Report Message To"
   },
   {
    "fieldname": "hq_details_tab",
@@ -133,7 +63,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-03-25 13:40:00.000000",
+ "modified": "2026-02-23 11:19:33.748013",
  "modified_by": "Administrator",
  "module": "Pupa Franchise",
  "name": "Franchise Settings",
