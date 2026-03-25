@@ -3,7 +3,7 @@ import frappe
 import json
 import requests
 
-
+# api function
 @frappe.whitelist()
 def get_api_settings():
     settings = frappe.get_doc("Franchise Settings")
