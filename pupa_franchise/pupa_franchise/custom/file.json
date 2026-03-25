@@ -1,0 +1,17 @@
+{
+ "custom_fields": [
+  {
+   "dt": "File",
+   "fieldname": "custom_for_whatsapp",
+   "fieldtype": "Check",
+   "insert_after": "file_type",
+   "label": "For Whatsapp",
+   "read_only": 1
+  }
+ ],
+ "custom_perms": [],
+ "doctype": "File",
+ "links": [],
+ "property_setters": [],
+ "sync_on_migrate": 1
+}

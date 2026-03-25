@@ -1,0 +1,36 @@
+{
+    "custom_fields": [
+        {
+            "dt": "Sales Invoice",
+            "fieldname": "custom_message_status",
+            "fieldtype": "Select",
+            "insert_after": "amended_from",
+            "label": "Message Status",
+            "no_copy": 1,
+            "options": "\nSent\nNot Sent",
+            "default": "Not Sent"
+        },
+        {
+            "dt": "Sales Invoice",
+            "fieldname": "custom_original_invoice_number",
+            "fieldtype": "Data",
+            "insert_after": "custom_message_status",
+            "label": "Original Invoice Number",
+            "no_copy": 1
+        },
+        {
+            "dt": "Sales Invoice",
+            "fieldname": "custom_current_balance",
+            "fieldtype": "Currency",
+            "insert_after": "custom_original_invoice_number",
+            "label": "Current Balance",
+            "no_copy": 1,
+            "read_only": 1
+        }
+    ],
+    "custom_perms": [],
+    "doctype": "Sales Invoice",
+    "links": [],
+    "property_setters": [],
+    "sync_on_migrate": 1
+}

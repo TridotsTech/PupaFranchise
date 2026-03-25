@@ -44,7 +44,8 @@ app_license = "mit"
 
 # include js in doctype views
 doctype_js = {
-    "Purchase Order":"public/js/purchase_order.js"
+    "Purchase Order":"public/js/purchase_order.js",
+    "Sales Invoice":"public/js/sales_invoice.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -76,10 +77,9 @@ doctype_js = {
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "pupa_franchise.utils.jinja_methods",
-# 	"filters": "pupa_franchise.utils.jinja_filters"
-# }
+jinja = {
+	"methods": "pupa_franchise.pupa_franchise.utils.py.sales_invoice.get_tax_table_sales_invoice",
+}
 
 # Installation
 # ------------
@@ -200,23 +200,16 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"pupa_franchise.tasks.all"
-# 	],
-# 	"daily": [
-# 		"pupa_franchise.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"pupa_franchise.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"pupa_franchise.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"pupa_franchise.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+    "cron": {
+        "* * * * *": [
+            "pupa_franchise.pupa_franchise.utils.py.whatsapp.send_queued_whatsapp_logs"
+        ],
+        "0 21 * * 1-6": [
+            "pupa_franchise.pupa_franchise.utils.py.whatsapp.delete_whatsapp_pdf_files"
+        ]
+    }
+}
 
 # Testing
 # -------
