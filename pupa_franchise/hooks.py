@@ -294,3 +294,11 @@ doc_events = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+fixtures = [
+	{
+        "doctype": "Property Setter",
+        "filters": [
+            ["name", "=", "Sales Order-main-field_order"],
+        ]   
+    }
+]
