@@ -1,76 +1,76 @@
-import frappe
-from frappe.utils import flt, today
+# import frappe
+# from frappe.utils import flt, today
 
 
-def on_submit(doc, method):
-    create_pi_for_influencer_so(doc.name)
+# def on_submit(doc, method):
+#     create_pi_for_influencer_so(doc.name)
 
 
 
-@frappe.whitelist()
-def create_pi_for_influencer_so(so_name):
-    so = frappe.get_doc("Sales Order", so_name)
+# @frappe.whitelist()
+# def create_pi_for_influencer_so(so_name):
+#     so = frappe.get_doc("Sales Order", so_name)
 
-    if not so.custom_do_you_have_any_influencer:
-        return 
+#     if not so.custom_do_you_have_any_influencer:
+#         return 
 
-    influencer_rows = so.get("custom_influencer_commission_details")
+#     influencer_rows = so.get("custom_influencer_commission_details")
 
-    if not influencer_rows:
-        frappe.msgprint("No influencer discount details found.", alert=True)
-        return
+#     if not influencer_rows:
+#         frappe.msgprint("No influencer discount details found.", alert=True)
+#         return
 
-    created_invoices = []
+#     created_invoices = []
 
-    for row in influencer_rows:
-        if not row.supplier or not row.commission_percentage:
-            continue
+#     for row in influencer_rows:
+#         if not row.supplier or not row.commission_percentage:
+#             continue
 
-        # supplier_name = get_or_create_supplier_from_employee(row.employee)
-        supplier_name = row.supplier
-        commission_prct = flt(row.commission_percentage)
-        grand_total = flt(so.grand_total)
-        commission_amount = (grand_total * commission_prct) / 100
+#         # supplier_name = get_or_create_supplier_from_employee(row.employee)
+#         supplier_name = row.supplier
+#         commission_prct = flt(row.commission_percentage)
+#         grand_total = flt(so.grand_total)
+#         commission_amount = (grand_total * commission_prct) / 100
 
-        pi_items = []
-        for item in so.items:
-            item_rate = flt(item.rate)
-            commission_rate = (item_rate * commission_prct) / 100
+#         pi_items = []
+#         for item in so.items:
+#             item_rate = flt(item.rate)
+#             commission_rate = (item_rate * commission_prct) / 100
 
-            pi_items.append({
-                "doctype": "Purchase Invoice Item",
-                "item_code": item.item_code,
-                "item_name": item.item_name,
-                "description": item.description or item.item_name,
-                "qty": flt(item.qty),
-                "uom": item.uom,
-                "rate": commission_rate,
-                "amount": commission_rate * flt(item.qty),
-                "cost_center": frappe.db.get_value(
-                    "Company", so.company, "cost_center"
-                ),
-            })
+#             pi_items.append({
+#                 "doctype": "Purchase Invoice Item",
+#                 "item_code": item.item_code,
+#                 "item_name": item.item_name,
+#                 "description": item.description or item.item_name,
+#                 "qty": flt(item.qty),
+#                 "uom": item.uom,
+#                 "rate": commission_rate,
+#                 "amount": commission_rate * flt(item.qty),
+#                 "cost_center": frappe.db.get_value(
+#                     "Company", so.company, "cost_center"
+#                 ),
+#             })
 
-        pi = frappe.new_doc("Purchase Invoice")
-        pi.supplier = supplier_name
-        pi.company = so.company
-        pi.posting_date = frappe.utils.today()
-        pi.due_date = frappe.utils.today()
-        pi.currency = so.currency
-        pi.buying_price_list = "Standard Buying"
-        pi.custom_sales_order = so_name 
-        pi.set("items", pi_items)
-        pi.insert(ignore_permissions=True)
+#         pi = frappe.new_doc("Purchase Invoice")
+#         pi.supplier = supplier_name
+#         pi.company = so.company
+#         pi.posting_date = frappe.utils.today()
+#         pi.due_date = frappe.utils.today()
+#         pi.currency = so.currency
+#         pi.buying_price_list = "Standard Buying"
+#         pi.custom_sales_order = so_name 
+#         pi.set("items", pi_items)
+#         pi.insert(ignore_permissions=True)
 
-        created_invoices.append(pi.name)
+#         created_invoices.append(pi.name)
 
-        frappe.msgprint(
-            f"Purchase Invoice <b>{pi.name}</b> created for Supplier <b>{supplier_name}</b> "
-            f"with {commission_prct}% discount (Amount: {commission_amount}).",
-            alert=True
-        )
+#         frappe.msgprint(
+#             f"Purchase Invoice <b>{pi.name}</b> created for Supplier <b>{supplier_name}</b> "
+#             f"with {commission_prct}% discount (Amount: {commission_amount}).",
+#             alert=True
+#         )
 
-    return created_invoices
+#     return created_invoices
 
 
 # def get_or_create_supplier_from_employee(emp_id):

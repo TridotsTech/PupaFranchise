@@ -190,9 +190,9 @@ doc_events = {
             "pupa_franchise.api.api_sync.create_so_from_franchise_po"
         ]
     },
-    "Sales Order": {
+    "Sales Invoice": {
         "before_submit": [
-            "pupa_franchise.utils.py.sales_order.on_submit"
+            "pupa_franchise.utils.py.sales_invoice.on_submit"
         ]
     }
 }
@@ -298,7 +298,7 @@ fixtures = [
 	{
         "doctype": "Property Setter",
         "filters": [
-            ["name", "=", "Sales Order-main-field_order"],
+            ["name", "=", "Sales Invoice-main-field_order"],
         ]   
     }
 ]
