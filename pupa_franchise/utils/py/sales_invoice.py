@@ -4,7 +4,7 @@ from frappe.utils import flt, today
 def on_submit(doc, method):
     create_pi_for_influencer_si(doc.name)
 
-
+# SI -> PI creation
 @frappe.whitelist()
 def create_pi_for_influencer_si(si_name):
     si = frappe.get_doc("Sales Invoice", si_name)
