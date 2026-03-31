@@ -39,6 +39,29 @@ frappe.ui.form.on("Purchase Order", {
                 get_stock_from_pupa(frm, row.doctype, row.name);
             }
         })
+    },
+    company: function (frm) {
+        if (frm.doc.company) {
+            console.log("hi");
+            
+            frappe.call({
+                method: "frappe.client.get_value",
+                args: {
+                    doctype: "Company",
+                    filters: { name: frm.doc.company },
+                    fieldname: ["custom_branch"]
+                },
+                callback: function (r) {
+                    if (r.message.custom_branch) {
+                        // frappe.msgprint(r.message.custom_branch)
+                        frm.set_value("custom_branch", r.message.custom_branch);
+                    } else {
+                        frappe.msgprint("Branch not mapped in Company")
+                        frm.set_value("custom_branch", "");
+                    }
+                }
+            });
+        }
     }
 })
 
