@@ -1,8 +1,43 @@
 import frappe
 from frappe.utils import flt, today
+import frappe
+from frappe import _
 
 def on_submit(doc, method):
     create_pi_for_influencer_si(doc.name)
+
+# by MK
+@frappe.whitelist()
+def get_sales_person_mobile(sales_person):
+    """
+    Fetches mobile number from employee linked to sales person
+    """
+    if not sales_person:
+        return {'status': 'error', 'message': _('Sales Person not provided')}
+    
+    sales_person_doc = frappe.get_doc('Sales Person', sales_person)
+    
+    if not sales_person_doc.employee:
+        return {
+            'status': 'error',
+            'message': _('Please set Employee for Sales Person: {0}').format(sales_person),
+            'title': _('Employee Not Linked')
+        }
+    
+    employee_doc = frappe.get_doc('Employee', sales_person_doc.employee)
+    
+    if not employee_doc.cell_number:
+        return {
+            'status': 'error',
+            'message': _('Please set Mobile Number for Employee: {0}').format(sales_person_doc.employee),
+            'title': _('Mobile Number Not Found')
+        }
+    
+    return {
+        'status': 'success',
+        'mobile_number': employee_doc.cell_number,
+        'employee': sales_person_doc.employee
+    }
 
 # SI -> PI creation
 @frappe.whitelist()
