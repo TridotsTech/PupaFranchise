@@ -238,14 +238,13 @@ def create_so_from_franchise_po(doc, method):
         settings = frappe.get_single("Franchise Settings")
         base_url, headers = get_api_settings()
 
-
-
         payload = {
             "customer": doc.company,
             "company": settings.hq_company,
             "transaction_date": str(doc.transaction_date),
             "delivery_date": str(doc.schedule_date) if doc.schedule_date else str(doc.transaction_date),
             "custom_franchise_po_id": doc.name,
+            "branch": doc.custom_branch,
             "items": []
         }
 
