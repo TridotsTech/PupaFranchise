@@ -193,9 +193,28 @@ doc_events = {
     },
     "Sales Invoice": {
         "before_submit": [
-            "pupa_franchise.utils.py.sales_invoice.on_submit"
-        ]
-    }
+            "pupa_franchise.api.sales_invoice.on_submit"
+        ],
+		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
+    },
+	"Payment Entry": {
+		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
+	},
+	"Purchase Invoice": {
+		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
+	},
+	"Journal Entry": {
+		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
+	},
+	"Stock Entry": {
+		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
+	},
+	"Purchase Order": {
+		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
+	},
+	"Sales Order": {
+		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
+	},
 }
 
 # Scheduled Tasks
