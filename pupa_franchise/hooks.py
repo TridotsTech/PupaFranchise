@@ -244,6 +244,10 @@ doc_events = {
 # Testing
 # -------
 
+jinja = {
+	"methods": "pupa_franchise.api.sales_invoice.get_tax_table_sales_invoice",
+}
+
 # before_tests = "pupa_franchise.install.before_tests"
 
 # Overriding Methods
