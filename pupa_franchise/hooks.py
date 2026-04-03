@@ -190,6 +190,7 @@ doc_events = {
         "on_update": "pupa_franchise.utils.py.item_group.on_update"
 		# "on_update": "pupa_franchise.utils.item_group.on_update"
     },
+	# Test
     "Purchase Order": {
         "on_submit": [
             "pupa_franchise.api.api_sync.create_so_from_franchise_po"
