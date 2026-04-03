@@ -193,7 +193,8 @@ doc_events = {
     "Purchase Order": {
         "on_submit": [
             "pupa_franchise.api.api_sync.create_so_from_franchise_po"
-        ]
+        ],
+		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
     },
     "Sales Invoice": {
         "before_submit": [
@@ -211,9 +212,6 @@ doc_events = {
 		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
 	},
 	"Stock Entry": {
-		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
-	},
-	"Purchase Order": {
 		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
 	},
 	"Sales Order": {
