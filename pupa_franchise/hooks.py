@@ -325,7 +325,7 @@ fixtures = [
 	{
         "doctype": "Property Setter",
         "filters": [
-            ["name", "=", "Sales Invoice-main-field_order"],
+            ["module", "=", "Pupa Franchise"],
         ]   
     }
 ]

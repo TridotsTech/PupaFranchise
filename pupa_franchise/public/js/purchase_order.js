@@ -31,19 +31,32 @@ frappe.ui.form.on("Purchase Order", {
             })
         }
     },
-    custom_branch: function (frm) {
-        if (!frm.doc.custom_branch) return;
+    // custom_branch: function (frm) {
+    //     if (!frm.doc.custom_branch) return;
 
-        (frm.doc.items || []).forEach(row => {
-            if (row.item_code) {
-                get_stock_from_pupa(frm, row.doctype, row.name);
-            }
-        })
+    //     (frm.doc.items || []).forEach(row => {
+    //         if (row.item_code) {
+    //             get_stock_from_pupa(frm, row.doctype, row.name);
+    //         }
+    //     })
+    // },
+    set_warehouse: function (frm) {
+        if (frm.doc.set_warehouse) {
+            (frm.doc.items || []).forEach(row => {
+                if (row.item_code) {
+                    get_warehouse_available_stock(frm, row.doctype, row.name);
+                }
+            });
+        } else {
+            (frm.doc.items || []).forEach(row => {
+                frappe.model.set_value(row.doctype, row.name, "custom_available_qty", 0);
+            });
+        }
     },
     company: function (frm) {
         if (frm.doc.company) {
             console.log("hi");
-            
+
             frappe.call({
                 method: "frappe.client.get_value",
                 args: {
@@ -65,34 +78,71 @@ frappe.ui.form.on("Purchase Order", {
     }
 })
 
+// frappe.ui.form.on("Purchase Order Item", {
+//     item_code: function (frm, cdt, cdn) {
+//         let row = locals[cdt][cdn];
+//         if (row.item_code) {
+//             get_stock_from_pupa(frm, cdt, cdn);
+//         } else {
+//             frappe.model.set_value(cdt, cdn, "custom_available_qty_in_pupa", "")
+//         }
+//     }
+// })
+
 frappe.ui.form.on("Purchase Order Item", {
     item_code: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
         if (row.item_code) {
-            get_stock_from_pupa(frm, cdt, cdn);
+            get_warehouse_available_stock(frm, cdt, cdn);
         } else {
-            frappe.model.set_value(cdt, cdn, "custom_available_qty_in_pupa", "")
+            frappe.model.set_value(cdt, cdn, "custom_available_qty", "")
         }
     }
 })
 
-function get_stock_from_pupa(frm, cdt, cdn) {
+// This commented method not reqd as of now.
+
+
+// function get_stock_from_pupa(frm, cdt, cdn) {
+//     let row = locals[cdt][cdn];
+//     frappe.call({
+//         method: "pupa_franchise.api.api_sync.get_stock_from_pupa",
+//         args: {
+//             branch: frm.doc.custom_branch
+//         },
+//         callback: function (r) {
+//             if (r.message) {
+//                 let stock = r.message.find(d => d.item_code === row.item_code);
+//                 if (stock) {
+//                     row.custom_available_qty_in_pupa = stock.actual_qty
+//                     frm.refresh_field("items");
+//                 }
+//                 else {
+//                     console.log("No stock for item:", row.item_code);
+//                 }
+//             }
+//         }
+//     })
+// }
+
+function get_warehouse_available_stock(frm, cdt, cdn) {
     let row = locals[cdt][cdn];
+    if (!frm.doc.set_warehouse) {
+        return;
+    }
     frappe.call({
-        method: "pupa_franchise.api.api_sync.get_stock_from_pupa",
-        args: {
-            branch: frm.doc.custom_branch
-        },
+        method: "pupa_franchise.api.api_sync.get_warehouse_available_stock",
+        args: { warehouse: frm.doc.set_warehouse },
         callback: function (r) {
-            if (r.message) {
-                let stock = r.message.find(d => d.item_code === row.item_code);
-                if (stock) {
-                    row.custom_available_qty_in_pupa = stock.actual_qty
-                    frm.refresh_field("items");
+            if (r.message && r.message.length) {
+                let stock_data = r.message.find(d => d.item_code === row.item_code);
+                if (stock_data) {
+                    frappe.model.set_value(cdt, cdn, "custom_available_qty", stock_data.actual_qty);
+                } else {
+                    frappe.model.set_value(cdt, cdn, "custom_available_qty", 0);
                 }
-                else {
-                    console.log("No stock for item:", row.item_code);
-                }
+            } else {
+                frappe.model.set_value(cdt, cdn, "custom_available_qty", 0);
             }
         }
     })

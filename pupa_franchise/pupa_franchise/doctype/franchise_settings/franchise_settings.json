@@ -12,7 +12,8 @@
   "hq_company",
   "default_supplier",
   "column_break_kkaa",
-  "default_franchise_company"
+  "default_franchise_company",
+  "influencer_commission_item"
  ],
  "fields": [
   {
@@ -57,13 +58,19 @@
    "fieldtype": "Link",
    "label": "Default Supplier",
    "options": "Supplier"
+  },
+  {
+   "fieldname": "influencer_commission_item",
+   "fieldtype": "Link",
+   "label": "Influencer Commission Item",
+   "options": "Item"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-02-23 11:19:33.748013",
+ "modified": "2026-04-08 14:22:21.417682",
  "modified_by": "Administrator",
  "module": "Pupa Franchise",
  "name": "Franchise Settings",

@@ -128,28 +128,50 @@ def create_company(company_name=None, branch_name=None):
 
         return company.name
 
+# This commented method not reqd as of now.
+
+# @frappe.whitelist()
+# def get_stock_from_pupa(branch):
+#     try:
+#         base_url, headers = get_api_settings()
+#         get_url = f"{base_url}/api/method/pupa.api.franchise.get_branch_stock"
+
+#         response = requests.get(
+#             url = get_url,
+#             headers = headers,
+#             params = {"branch_name": branch}
+#         )
+
+#         if response.status_code != 200:
+#             frappe.throw("Error connecting to Pupa")
+
+#         return response.json().get("message", [])
+
+#     except Exception as e:
+#         frappe.log_error(
+#             message=frappe.get_traceback(),
+#             title="Pupa Branch Stock Error"
+#         )
+
+
 @frappe.whitelist()
-def get_stock_from_pupa(branch):
-    try:
-        base_url, headers = get_api_settings()
-        get_url = f"{base_url}/api/method/pupa.api.franchise.get_branch_stock"
+def get_warehouse_available_stock(warehouse):
+    if not warehouse:
+        return []
 
-        response = requests.get(
-            url = get_url,
-            headers = headers,
-            params = {"branch_name": branch}
-        )
+    stock = frappe.db.sql("""
+    SELECT
+        item_code,
+        actual_qty
+    FROM 
+        `tabBin`
+    WHERE
+        warehouse = %s
+    AND actual_qty > 0
+    """, (warehouse,), as_dict=True)
 
-        if response.status_code != 200:
-            frappe.throw("Error connecting to Pupa")
+    return stock
 
-        return response.json().get("message", [])
-
-    except Exception as e:
-        frappe.log_error(
-            message=frappe.get_traceback(),
-            title="Pupa Branch Stock Error"
-        )
 
 # def create_franchise_supplier_to_pupa_customer(doc, method):
 #     try:
@@ -703,3 +725,31 @@ def _update_draft_pos_for_pricing_rule(pricing_rule_name):
             message=frappe.get_traceback(),
             title="Pricing Rule Draft PO Update Error"
         )
+
+
+@frappe.whitelist()
+def get_pupa_warehouses():
+    """Fetch the franchise allowed warehouses from Pupa (HQ) instance."""
+    try:
+        base_url, headers = get_api_settings()
+
+        response = requests.get(
+            url=f"{base_url}/api/method/pupa.api.franchise.get_franchise_allowed_warehouses",
+            headers=headers
+        )
+
+        if response.status_code != 200:
+            frappe.log_error(
+                message=f"Status: {response.status_code}\nResponse: {response.text}",
+                title="Pupa Warehouse Fetch Error"
+            )
+            return []
+
+        return response.json().get("message", [])
+
+    except Exception as e:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Pupa Warehouse Fetch Error"
+        )
+        return []
