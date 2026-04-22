@@ -513,7 +513,7 @@ def create_or_update_pricing_rule(**kwargs):
             "name"
         )
 
-        franchise_company = frappe.db.get_single_value("Franchise Settings", "default_franchise_company")
+        # franchise_company = frappe.db.get_single_value("Franchise Settings", "default_franchise_company")
 
         if existing:
             pr = frappe.get_doc("Pricing Rule", existing)
@@ -541,7 +541,8 @@ def create_or_update_pricing_rule(**kwargs):
         pr.max_amt = float(kwargs.get("max_amt", 0))
         pr.valid_from = kwargs.get("valid_from") or None
         pr.valid_upto = kwargs.get("valid_upto") or None
-        pr.company = franchise_company
+        pr.company = ""
+        # pr.company = franchise_company
         pr.currency = kwargs.get("currency") or "INR"
         pr.rate_or_discount = kwargs.get("rate_or_discount") or ""
         pr.rate = float(kwargs.get("rate", 0))
