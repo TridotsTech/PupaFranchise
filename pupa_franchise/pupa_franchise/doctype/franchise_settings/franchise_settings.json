@@ -50,6 +50,7 @@
   {
    "fieldname": "default_franchise_company",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Default Franchise Company",
    "options": "Company"
   },
@@ -70,7 +71,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-08 14:22:21.417682",
+ "modified": "2026-05-04 17:44:54.576520",
  "modified_by": "Administrator",
  "module": "Pupa Franchise",
  "name": "Franchise Settings",
