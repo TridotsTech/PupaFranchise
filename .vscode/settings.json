@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "/home/britvasan/motovolt-bench/env/bin/python",
+  "python.analysis.extraPaths": [
+    "/home/britvasan/motovolt-bench/apps/frappe",
+    "/home/britvasan/motovolt-bench/apps/erpnext"
+  ]
+}

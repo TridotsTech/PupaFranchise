@@ -68,8 +68,8 @@ def create_pi_for_influencer_si(si_name):
 
         supplier_name = row.supplier
         commission_prct = flt(row.commission_percentage)
-        grand_total = flt(si.grand_total)
-        commission_amount = flt((grand_total * commission_prct) / 100, 2)
+        total = flt(si.total)
+        commission_amount = flt((total * commission_prct) / 100, 2)
 
         cost_center = frappe.db.get_value("Company", si.company, "cost_center")
 

@@ -1,13 +1,138 @@
 import frappe
+import re
 from datetime import datetime
-from frappe.model.naming import make_autoname, revert_series_if_last
-from erpnext.accounts.utils import get_fiscal_year
+from frappe.model.naming import make_autoname, revert_series_if_last  
+from erpnext.accounts.utils import get_fiscal_year 
+
+
+def is_year_string(s):
+    """
+    Checks if a string segment looks like a year (e.g., '2026' or fiscal year '2627').
+    """
+    if len(s) != 4:
+        return False
+    # Check if it starts with '20' (e.g. 2026, 2027)
+    if s.startswith("20") and s[2:].isdigit():
+        return True
+    # Check if it is a fiscal year format 'YY(YY+1)' like '2627'
+    if s.isdigit():
+        try:
+            y1 = int(s[:2])
+            y2 = int(s[2:])
+            if y2 == (y1 + 1) or y2 == (y1 + 1) % 100:
+                return True
+        except ValueError:
+            pass
+    return False
+
+
+def get_company_naming_series(doc):
+    """
+    Looks up the naming series defined in the Company's custom child table.
+    """
+    if not getattr(doc, "company", None):
+        return None
+
+    try:
+        company_doc = frappe.get_doc("Company", doc.company)
+    except frappe.DoesNotExistError:
+        return None
+
+    # Dynamically find the child table field name and field names inside it
+    child_table_fieldname = None
+    doc_type_fieldname = None
+    prefix_fieldname = None
+
+    for field in company_doc.meta.fields:
+        if field.fieldtype == "Table":
+            child_meta = frappe.get_meta(field.options)
+            temp_doc_type = None
+            temp_prefix = None
+            for c_field in child_meta.fields:
+                if c_field.fieldtype == "Link" and c_field.options == "DocType":
+                    temp_doc_type = c_field.fieldname
+                elif c_field.fieldname in ["naming_series_prefix", "naming_series", "prefix", "series_prefix"] or (c_field.fieldtype == "Data" and "naming" in c_field.fieldname):
+                    temp_prefix = c_field.fieldname
+            
+            if temp_doc_type:
+                child_table_fieldname = field.fieldname
+                doc_type_fieldname = temp_doc_type
+                if not temp_prefix:
+                    for c_field in child_meta.fields:
+                        if c_field.fieldtype == "Data":
+                            temp_prefix = c_field.fieldname
+                            break
+                prefix_fieldname = temp_prefix
+                break
+
+    if not child_table_fieldname or not doc_type_fieldname or not prefix_fieldname:
+        return None
+
+    child_rows = company_doc.get(child_table_fieldname) or []
+    if not child_rows:
+        return None
+
+    # Determine target lookup types based on document flags (e.g. Sales Invoice returns)
+    lookup_doctypes = [doc.doctype]
+    if getattr(doc, "is_return", False):
+        if doc.doctype == "Sales Invoice":
+            lookup_doctypes.insert(0, "Credit Note")
+            lookup_doctypes.insert(1, "Sales Invoice Return")
+        elif doc.doctype == "Purchase Invoice":
+            lookup_doctypes.insert(0, "Debit Note")
+            lookup_doctypes.insert(1, "Purchase Invoice Return")
+
+    series_prefix = None
+    for target_dt in lookup_doctypes:
+        for row in child_rows:
+            if row.get(doc_type_fieldname) == target_dt:
+                series_prefix = row.get(prefix_fieldname)
+                break
+        if series_prefix:
+            break
+
+    if not series_prefix:
+        return None
+
+    series_prefix = series_prefix.strip()
+
+    if "#" in series_prefix:
+        return series_prefix
+
+    digit_match = re.search(r"(\d+)$", series_prefix)
+    if digit_match:
+        digits = digit_match.group(1)
+        if not is_year_string(digits):
+            num_digits = len(digits)
+            hash_length = max(4, num_digits)
+            prefix_without_digits = series_prefix[:-num_digits]
+            
+            if not prefix_without_digits.endswith("."):
+                if prefix_without_digits.endswith("-") or prefix_without_digits.endswith("/"):
+                    prefix_without_digits = prefix_without_digits + "."
+                else:
+                    prefix_without_digits = prefix_without_digits + "-."
+            return f"{prefix_without_digits}{'#' * hash_length}"
+
+    if series_prefix.endswith(".") or series_prefix.endswith("-") or series_prefix.endswith("/"):
+        if not series_prefix.endswith("."):
+            series_prefix = series_prefix + "."
+        return f"{series_prefix}####"
+    else:
+        return f"{series_prefix}-.####"
 
 
 def naming_series_creation(doc, method):
     if not doc.company:
         return
     
+    # Try custom company naming series first
+    series = get_company_naming_series(doc)
+    if series:
+        doc.name = make_autoname(series)
+        return
+
+    # Fallback to default logic
     doctype = doc.doctype
 
     date_field = doc.transaction_date if doc.doctype in [
@@ -63,4 +188,5 @@ def naming_series_creation(doc, method):
 
     if series:
         doc.name = make_autoname(series)
+
 
