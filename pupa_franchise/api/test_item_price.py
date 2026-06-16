@@ -123,3 +123,59 @@ class TestGetItemDetails(FrappeTestCase):
 
         # Both should be included (None + matching company)
         self.assertEqual(len(filtered), 2)
+
+    def test_get_mrp_rate(self):
+        """Verify that get_mrp_rate fetches the correct MRP price under strict company rules."""
+        from pupa_franchise.api.item_price import get_mrp_rate
+
+        item_code = "_Test Item Code MRP"
+        company = "_Test Company MRP"
+
+        # 1. Test when both company-specific and generic prices exist
+        def mock_get_all_both(doctype, **kwargs):
+            if doctype == "Item Price":
+                return [
+                    {"price_list_rate": 5000.0, "custom_company": company},
+                    {"price_list_rate": 4500.0, "custom_company": None}
+                ]
+            return frappe.get_all(doctype, **kwargs)
+
+        with patch('frappe.get_all', new=mock_get_all_both):
+            # Matches company exactly
+            self.assertEqual(get_mrp_rate(item_code, company), 5000.0)
+            # Other company falls back to generic (since None is mapped to all companies)
+            self.assertEqual(get_mrp_rate(item_code, "Other Company"), 4500.0)
+
+        # 2. Test when only company-specific price exists (no generic)
+        def mock_get_all_only_specific(doctype, **kwargs):
+            if doctype == "Item Price":
+                return [
+                    {"price_list_rate": 5000.0, "custom_company": company}
+                ]
+            return frappe.get_all(doctype, **kwargs)
+
+        with patch('frappe.get_all', new=mock_get_all_only_specific):
+            # Matches company exactly
+            self.assertEqual(get_mrp_rate(item_code, company), 5000.0)
+            # Other company has no generic fallback, must return 0.0 (no crossover)
+            self.assertEqual(get_mrp_rate(item_code, "Other Company"), 0.0)
+
+    def test_get_item_details_includes_custom_mrp(self):
+        """Verify that get_item_details appends custom_mrp to result."""
+        from pupa_franchise.api.item_price import get_item_details
+        from erpnext.stock import get_item_details as eid
+
+        item_code = "_Test Item Code MRP"
+        company = "_Test Company MRP"
+
+        # Mock get_mrp_rate
+        with patch('pupa_franchise.api.item_price.get_mrp_rate', return_value=5000.0):
+            # Mock original get_item_details to return a basic dict
+            with patch.object(eid, 'get_item_details', return_value={"item_code": item_code, "price_list_rate": 1000.0}):
+                args = {
+                    "item_code": item_code,
+                    "company": company
+                }
+                result = get_item_details(args)
+                self.assertEqual(result.get("custom_mrp"), 5000.0)
+

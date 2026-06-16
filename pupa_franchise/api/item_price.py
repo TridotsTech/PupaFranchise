@@ -36,8 +36,55 @@ def get_item_details(args, doc=None, for_validate=False, overwrite_warehouse=Tru
     eid.get_item_price = company_filtered_get_item_price
     try:
         result = eid.get_item_details(args, doc, for_validate, overwrite_warehouse)
+        args_dict = frappe.parse_json(args) or {}
+        item_code = args_dict.get("item_code")
+        if result and isinstance(result, dict) and item_code:
+            company = args_dict.get("company")
+            currency = args_dict.get("currency") or result.get("currency")
+            mrp_rate = get_mrp_rate(item_code, company, currency)
+            if mrp_rate:
+                result["custom_mrp"] = mrp_rate
     finally:
         # Always restore the original function
         eid.get_item_price = original_get_item_price
 
     return result
+
+
+def get_mrp_rate(item_code, company=None, currency=None):
+    """
+    Fetches the price from the 'MRP' price list for a given item,
+    matching the company-specific price list rate if available,
+    falling back to a generic price (without company).
+    """
+    if not item_code:
+        return 0.0
+
+    filters = {
+        "item_code": item_code,
+        "price_list": "MRP"
+    }
+    if currency:
+        filters["currency"] = currency
+
+    item_prices = frappe.get_all(
+        "Item Price",
+        filters=filters,
+        fields=["price_list_rate", "custom_company"],
+        order_by="custom_company desc"
+    )
+
+    if not item_prices:
+        return 0.0
+
+    if company:
+        for ip in item_prices:
+            if ip.custom_company == company:
+                return ip.price_list_rate
+
+    for ip in item_prices:
+        if not ip.custom_company:
+            return ip.price_list_rate
+
+    return 0.0
+
