@@ -1,6 +1,5 @@
 import frappe
 from frappe.utils import flt, today
-import frappe
 from frappe import _
 
 def on_submit(doc, method):
@@ -63,7 +62,7 @@ def create_pi_for_influencer_si(si_name):
     created_invoices = []
 
     for row in influencer_rows:
-        if not row.supplier or not row.commission_percentage:
+        if not row.supplier:
             continue
 
         supplier_name = row.supplier
@@ -90,6 +89,7 @@ def create_pi_for_influencer_si(si_name):
             "uom": commission_item_doc.stock_uom or "Nos",
             "rate": commission_amount,
             "amount": commission_amount,
+            "price_list_rate": commission_amount,
             "cost_center": cost_center
         })
 
