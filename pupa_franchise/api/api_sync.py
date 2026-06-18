@@ -371,61 +371,65 @@ def create_so_from_franchise_po(doc, method):
         
 
 
-@frappe.whitelist()
-def create_purchase_receipt(supplier=None, company=None, posting_date=None, custom_sales_invoice_id=None, items=None):
-    try:
-        frappe.log_error("Create Purchase Receipt Called", f"Supplier: {supplier}, Bill No: {custom_sales_invoice_id}")
+# @frappe.whitelist()
+# def create_purchase_receipt(supplier=None, company=None, posting_date=None, custom_sales_invoice_id=None, items=None):
+#     try:
+#         frappe.log_error("Create Purchase Receipt Called", f"Supplier: {supplier}, Bill No: {custom_sales_invoice_id}")
 
-        if not supplier:
-            frappe.throw("Supplier is required")
+#         if not supplier:
+#             frappe.throw("Supplier is required")
 
-        pupa_supplier = frappe.db.get_single_value("Franchise Settings", "default_supplier")
-        frappe.log_error("Def Supplier", pupa_supplier)
+#         pupa_supplier = frappe.db.get_single_value("Franchise Settings", "default_supplier")
+#         frappe.log_error("Def Supplier", pupa_supplier)
 
-        if not items:
-            frappe.throw("Items are required")
+#         local_company = frappe.db.get_single_value("Franchise Settings", "default_franchise_company")
+#         if not local_company:
+#             frappe.throw("Please configure Default Franchise Company in Franchise Settings")
 
-        if isinstance(items, str):
-            items = json.loads(items)
+#         if not items:
+#             frappe.throw("Items are required")
 
-        pr = frappe.new_doc("Purchase Receipt")
-        pr.supplier = pupa_supplier
-        pr.company = company
-        pr.posting_date = posting_date
-        pr.custom_sales_invoice_id = custom_sales_invoice_id
+#         if isinstance(items, str):
+#             items = json.loads(items)
 
-        for item in items:
-            default_warehouse = frappe.db.get_value(
-                "Item Default",
-                {"parent": item.get("item_code"), "company": company},
-                "default_warehouse"
-            )
+#         pr = frappe.new_doc("Purchase Receipt")
+#         pr.supplier = pupa_supplier
+#         pr.company = local_company
+#         pr.posting_date = posting_date
+#         pr.custom_sales_invoice_id = custom_sales_invoice_id
 
-            pr.append("items", {
-                "item_code": item.get("item_code"),
-                "item_name": item.get("item_name"),
-                "qty": item.get("qty"),
-                "uom": item.get("uom"),
-                "rate": item.get("rate"),
-                "amount": item.get("amount"),
-                "warehouse": default_warehouse
-            })
+#         for item in items:
+#             default_warehouse = frappe.db.get_value(
+#                 "Item Default",
+#                 {"parent": item.get("item_code"), "company": local_company},
+#                 "default_warehouse"
+#             )
 
-        pr.flags.ignore_mandatory = True
-        pr.insert(ignore_permissions=True)
-        # No submit — stays Draft
-        frappe.db.commit()
+#             pr.append("items", {
+#                 "item_code": item.get("item_code"),
+#                 "item_name": item.get("item_name"),
+#                 "qty": item.get("qty"),
+#                 "uom": item.get("uom"),
+#                 "rate": item.get("rate"),
+#                 "amount": item.get("amount"),
+#                 "warehouse": default_warehouse
+#             })
 
-        frappe.log_error("Purchase Receipt Created", pr.name)
+#         pr.flags.ignore_mandatory = True
+#         pr.insert(ignore_permissions=True)
+#         # No submit — stays Draft
+#         frappe.db.commit()
 
-        return {"message": pr.name}
+#         frappe.log_error("Purchase Receipt Created", pr.name)
 
-    except Exception as e:
-        frappe.log_error(
-            message=frappe.get_traceback(),
-            title="Create Purchase Receipt Error"
-        )
-        frappe.throw(f"Error creating Purchase Receipt: {str(e)}")
+#         return {"message": pr.name}
+
+#     except Exception as e:
+#         frappe.log_error(
+#             message=frappe.get_traceback(),
+#             title="Create Purchase Receipt Error"
+#         )
+#         frappe.throw(f"Error creating Purchase Receipt: {str(e)}")
 
 
 @frappe.whitelist()
@@ -444,6 +448,10 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
         
         frappe.log_error("Supplier Name for PI", supplier_data)
 
+        local_company = frappe.db.get_single_value("Franchise Settings", "default_franchise_company")
+        if not local_company:
+            frappe.throw("Please configure Default Franchise Company in Franchise Settings")
+
         if not supplier_data:
             frappe.throw("Supplier could not be determined. Please set a Default Supplier in Franchise Settings or ensure the Purchase Order exists.")
 
@@ -455,7 +463,7 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
 
         pi = frappe.new_doc("Purchase Invoice")
         pi.supplier = supplier_data
-        pi.company = company
+        pi.company = local_company
         pi.posting_date = posting_date
         pi.due_date = due_date or posting_date
         pi.custom_sales_invoice_id = custom_sales_invoice_id
@@ -464,7 +472,7 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
         for item in items:
             default_warehouse = frappe.db.get_value(
                 "Item Default",
-                {"parent": item.get("item_code"), "company": company},
+                {"parent": item.get("item_code"), "company": local_company},
                 "default_warehouse"
             )
 
