@@ -72,23 +72,16 @@ def get_company_naming_series(doc):
     if not child_rows:
         return None
 
-    # Determine target lookup types based on document flags (e.g. Sales Invoice returns)
-    lookup_doctypes = [doc.doctype]
-    if getattr(doc, "is_return", False):
-        if doc.doctype == "Sales Invoice":
-            lookup_doctypes.insert(0, "Credit Note")
-            lookup_doctypes.insert(1, "Sales Invoice Return")
-        elif doc.doctype == "Purchase Invoice":
-            lookup_doctypes.insert(0, "Debit Note")
-            lookup_doctypes.insert(1, "Purchase Invoice Return")
-
     series_prefix = None
-    for target_dt in lookup_doctypes:
-        for row in child_rows:
-            if row.get(doc_type_fieldname) == target_dt:
+    for row in child_rows:
+        if row.get(doc_type_fieldname) == doc.doctype:
+            if getattr(doc, "is_return", False):
+                if row.get("is_return") and row.get("return_naming_series"):
+                    series_prefix = row.get("return_naming_series")
+                else:
+                    return None
+            else:
                 series_prefix = row.get(prefix_fieldname)
-                break
-        if series_prefix:
             break
 
     if not series_prefix:

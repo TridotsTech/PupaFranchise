@@ -22,6 +22,51 @@ def get_api_settings():
 
     return base_url, headers
 
+def get_error_message(response):
+    try:
+        res_json = response.json()
+    except Exception:
+        return response.text or ""
+
+    error_msg = ""
+    # Check for _server_messages
+    server_messages = res_json.get("_server_messages")
+    if server_messages:
+        try:
+            messages = json.loads(server_messages)
+            parsed_msgs = []
+            for m in messages:
+                try:
+                    msg_data = json.loads(m)
+                    if isinstance(msg_data, dict) and msg_data.get("message"):
+                        parsed_msgs.append(msg_data.get("message"))
+                except Exception:
+                    parsed_msgs.append(str(m))
+            if parsed_msgs:
+                error_msg = "\n".join(parsed_msgs)
+        except Exception:
+            pass
+
+    # If no server messages, check for 'exception' or 'exc' or 'message'
+    if not error_msg:
+        if res_json.get("exception"):
+            error_msg = res_json.get("exception")
+        elif res_json.get("message"):
+            error_msg = res_json.get("message")
+        elif res_json.get("exc"):
+            try:
+                exc_list = json.loads(res_json.get("exc"))
+                if isinstance(exc_list, list) and exc_list:
+                    # get last line of exception if it contains traceback
+                    last_line = exc_list[-1].strip().split("\n")[-1]
+                    error_msg = last_line
+                elif isinstance(exc_list, str):
+                    error_msg = exc_list.strip().split("\n")[-1]
+            except Exception:
+                pass
+
+    return error_msg
+
 @frappe.whitelist()
 def create_item(item_code=None, item_name=None, item_group=None, stock_uom=None, gst_hsn_code=None):
     frappe.log_error("Func called")
@@ -244,8 +289,14 @@ def create_franchise_supplier_to_pupa_customer(doc, method):
                 message=f"Failed to create customer in Pupa.\nStatus: {response.status_code}\nResponse: {response.text}",
                 title="Franchise Sync Error"
             )
-            frappe.throw(f"Failed to create customer in Pupa instance. Status: {response.status_code}")
+            err_msg = get_error_message(response)
+            if err_msg:
+                frappe.throw(err_msg)
+            else:
+                frappe.throw(f"Failed to create customer in Pupa instance. Status: {response.status_code}")
 
+    except frappe.ValidationError:
+        raise
     except Exception as e:
         frappe.log_error(
             message=frappe.get_traceback(),
@@ -303,8 +354,14 @@ def create_so_from_franchise_po(doc, method):
                 message=f"Failed to create Sales Order in Pupa.\nStatus: {response.status_code}\nResponse: {response.text}",
                 title="Franchise PO to Pupa SO Sync Error"
             )
-            frappe.throw(f"Failed to create Sales Order in Pupa Instance. Status: {response.status_code}")
+            err_msg = get_error_message(response)
+            if err_msg:
+                frappe.throw(err_msg)
+            else:
+                frappe.throw(f"Failed to create Sales Order in Pupa Instance. Status: {response.status_code}")
 
+    except frappe.ValidationError:
+        raise
     except Exception as e:
         frappe.log_error(
             message=frappe.get_traceback(),

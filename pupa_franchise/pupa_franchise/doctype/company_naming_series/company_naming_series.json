@@ -7,7 +7,9 @@
  "engine": "InnoDB",
  "field_order": [
   "document_type",
-  "naming_series_prefix"
+  "naming_series_prefix",
+  "is_return",
+  "return_naming_series"
  ],
  "fields": [
   {
@@ -24,6 +26,20 @@
    "in_list_view": 1,
    "label": "Naming Series",
    "reqd": 1
+  },
+  {
+   "fieldname": "is_return",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Return",
+   "depends_on": "eval:in_list([\"Sales Invoice\", \"Purchase Invoice\"], doc.document_type)"
+  },
+  {
+   "fieldname": "return_naming_series",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Return Naming Series",
+   "depends_on": "eval:doc.is_return"
   }
  ],
  "index_web_pages_for_search": 1,
