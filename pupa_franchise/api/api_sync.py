@@ -468,6 +468,7 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
         pi.due_date = due_date or posting_date
         pi.custom_sales_invoice_id = custom_sales_invoice_id
         pi.update_stock = 1
+        pi.ignore_pricing_rule = 1
 
         for item in items:
             default_warehouse = frappe.db.get_value(
