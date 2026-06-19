@@ -358,6 +358,8 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
         pi.posting_date = posting_date
         pi.due_date = due_date or posting_date
         pi.custom_sales_invoice_id = custom_sales_invoice_id
+        pi.bill_no = custom_sales_invoice_id
+        pi.bill_date = posting_date
         pi.update_stock = 1
         pi.ignore_pricing_rule = 1
 
