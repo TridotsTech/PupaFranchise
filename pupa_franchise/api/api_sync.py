@@ -114,23 +114,6 @@ def create_item_group(item_group_name=None, parent_item_group=None, is_group=Non
 
     return {"status": "skipped", "reason": "Item Group already exists"}
 
-# @frappe.whitelist()
-# def create_supplier(supplier_name=None, supplier_type=None):
-#     frappe.log_error("Supplier Func Called")
-#     if not supplier_name or not supplier_type:
-#         return 
-
-#     if not frappe.db.exists("Supplier", supplier_name):
-#         supplier = frappe.new_doc("Supplier")
-#         supplier.supplier_name = supplier_name
-#         supplier.supplier_type = supplier_type
-
-#         supplier.insert(ignore_permissions=True)
-#         frappe.db.commit()
-
-#         return supplier.name
-
-
 @frappe.whitelist()
 def create_branch(branch_name=None):
     frappe.log_error("branch Func called")
@@ -166,37 +149,46 @@ def create_company(company_name=None, branch_name=None):
         company.custom_branch = branch_name
         company.gst_category = "Unregistered"
 
+        # Generate unique abbreviation
+        import re
+        cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', company_name).strip()
+        if not cleaned:
+            cleaned = "CO"
+        
+        words = cleaned.split()
+        default_abbr = "".join(w[0] for w in words).upper()
+        
+        abbr = None
+        if default_abbr and not frappe.db.exists("Company", {"abbr": default_abbr}):
+            abbr = default_abbr
+        else:
+            first_word = words[0].upper()
+            for i in range(2, len(first_word) + 1):
+                candidate = first_word[:i]
+                if not frappe.db.exists("Company", {"abbr": candidate}):
+                    abbr = candidate
+                    break
+            
+            if not abbr:
+                prefix = default_abbr or first_word[:2]
+                suffix = 1
+                while True:
+                    candidate = f"{prefix}{suffix}"
+                    if len(candidate) > 5:
+                        prefix = prefix[:5 - len(str(suffix))]
+                        candidate = f"{prefix}{suffix}"
+                    if not frappe.db.exists("Company", {"abbr": candidate}):
+                        abbr = candidate
+                        break
+        
+        company.abbr = abbr
+
         company.insert(ignore_permissions=True)
         company.flags.ignore_mandatory = True
 
         frappe.db.commit()
 
         return company.name
-
-# This commented method not reqd as of now.
-
-# @frappe.whitelist()
-# def get_stock_from_pupa(branch):
-#     try:
-#         base_url, headers = get_api_settings()
-#         get_url = f"{base_url}/api/method/pupa.api.franchise.get_branch_stock"
-
-#         response = requests.get(
-#             url = get_url,
-#             headers = headers,
-#             params = {"branch_name": branch}
-#         )
-
-#         if response.status_code != 200:
-#             frappe.throw("Error connecting to Pupa")
-
-#         return response.json().get("message", [])
-
-#     except Exception as e:
-#         frappe.log_error(
-#             message=frappe.get_traceback(),
-#             title="Pupa Branch Stock Error"
-#         )
 
 
 @frappe.whitelist()
@@ -217,45 +209,6 @@ def get_warehouse_available_stock(warehouse):
 
     return stock
 
-
-# def create_franchise_supplier_to_pupa_customer(doc, method):
-#     try:
-#         base_url, headers = get_api_settings()
-
-#         customer_data = {
-#             "doctype": "Customer",
-#             "customer_name": doc.supplier_name,
-#             "customer_type": doc.supplier_type,
-#             "customer_group": "Franchise",
-#             "territory": doc.country if doc.country else "All Territories"
-#         }
-
-#         response = requests.post(
-#             f{base_url}/api/resource/Customer,
-#             json=customer_data,
-#             headers=headers
-#         )
-
-#         if response.status_code == 200:
-#             frappe.msgprint(
-#                 f"Customer '{doc.supplier_name}' Created in Pupa Instance",
-#                 indicator="green",
-#                 alert=True
-#             )
-
-#         else:
-#             frappe.log_error(
-#                 message=f"Failed to create customer in Pupa.\nStatus: {response.status_code}\nResponse: {response.text}",
-#                 title="Franchise Sync Error"
-#             )
-#             frappe.throw(f"Failed to create customer in Pupa instance. Status: {response.status_code}")
-
-#     except Exception as e:
-#          frappe.log_error(
-#             message=frappe.get_traceback(),
-#             title="Franchise Supplier to Pupa Customer Error"
-#         )
-#         frappe.throw(f"Error syncing supplier to Pupa: {str(e)}")
 
 def create_franchise_supplier_to_pupa_customer(doc, method):
     try:
@@ -370,68 +323,6 @@ def create_so_from_franchise_po(doc, method):
         frappe.throw(f"Error syncing PO to Pupa Sales Order: {str(e)}")
         
 
-
-# @frappe.whitelist()
-# def create_purchase_receipt(supplier=None, company=None, posting_date=None, custom_sales_invoice_id=None, items=None):
-#     try:
-#         frappe.log_error("Create Purchase Receipt Called", f"Supplier: {supplier}, Bill No: {custom_sales_invoice_id}")
-
-#         if not supplier:
-#             frappe.throw("Supplier is required")
-
-#         pupa_supplier = frappe.db.get_single_value("Franchise Settings", "default_supplier")
-#         frappe.log_error("Def Supplier", pupa_supplier)
-
-#         local_company = frappe.db.get_single_value("Franchise Settings", "default_franchise_company")
-#         if not local_company:
-#             frappe.throw("Please configure Default Franchise Company in Franchise Settings")
-
-#         if not items:
-#             frappe.throw("Items are required")
-
-#         if isinstance(items, str):
-#             items = json.loads(items)
-
-#         pr = frappe.new_doc("Purchase Receipt")
-#         pr.supplier = pupa_supplier
-#         pr.company = local_company
-#         pr.posting_date = posting_date
-#         pr.custom_sales_invoice_id = custom_sales_invoice_id
-
-#         for item in items:
-#             default_warehouse = frappe.db.get_value(
-#                 "Item Default",
-#                 {"parent": item.get("item_code"), "company": local_company},
-#                 "default_warehouse"
-#             )
-
-#             pr.append("items", {
-#                 "item_code": item.get("item_code"),
-#                 "item_name": item.get("item_name"),
-#                 "qty": item.get("qty"),
-#                 "uom": item.get("uom"),
-#                 "rate": item.get("rate"),
-#                 "amount": item.get("amount"),
-#                 "warehouse": default_warehouse
-#             })
-
-#         pr.flags.ignore_mandatory = True
-#         pr.insert(ignore_permissions=True)
-#         # No submit — stays Draft
-#         frappe.db.commit()
-
-#         frappe.log_error("Purchase Receipt Created", pr.name)
-
-#         return {"message": pr.name}
-
-#     except Exception as e:
-#         frappe.log_error(
-#             message=frappe.get_traceback(),
-#             title="Create Purchase Receipt Error"
-#         )
-#         frappe.throw(f"Error creating Purchase Receipt: {str(e)}")
-
-
 @frappe.whitelist()
 def create_purchase_invoice(company=None, posting_date=None, due_date=None, 
     custom_sales_invoice_id=None, custom_franchise_po_id=None, 
@@ -471,14 +362,27 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
         pi.ignore_pricing_rule = 1
 
         for item in items:
-            default_warehouse = frappe.db.get_value(
+            item_code = item.get("item_code")
+            item_default_exists = frappe.db.exists(
                 "Item Default",
-                {"parent": item.get("item_code"), "company": local_company},
-                "default_warehouse"
+                {"parent": item_code, "company": local_company}
             )
+            
+            default_warehouse = None
+            if item_default_exists:
+                default_warehouse = frappe.db.get_value(
+                    "Item Default",
+                    {"parent": item_code, "company": local_company},
+                    "default_warehouse"
+                )
+
+            if not item_default_exists or not default_warehouse:
+                frappe.throw(
+                    f"In Franchise instance, Item '{item_code}' accounting mapping (Company and Default Warehouse) is empty/missing. Kindly map it in the Item master."
+                )
 
             pi.append("items", {
-                "item_code": item.get("item_code"),
+                "item_code": item_code,
                 "item_name": item.get("item_name"),
                 "qty": item.get("qty"),
                 "uom": item.get("uom"),
@@ -496,6 +400,8 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
 
         return {"message": pi.name}
 
+    except frappe.ValidationError:
+        raise
     except Exception as e:
         frappe.log_error(
             message=frappe.get_traceback(),
