@@ -51,7 +51,7 @@ def get_company_naming_series(doc):
             for c_field in child_meta.fields:
                 if c_field.fieldtype == "Link" and c_field.options == "DocType":
                     temp_doc_type = c_field.fieldname
-                elif c_field.fieldname in ["naming_series_prefix", "naming_series", "prefix", "series_prefix"] or (c_field.fieldtype == "Data" and "naming" in c_field.fieldname):
+                elif c_field.fieldname in ["naming_series_prefix", "naming_series", "prefix", "series_prefix"] or (c_field.fieldtype == "Data" and "naming" in c_field.fieldname and "return" not in c_field.fieldname):
                     temp_prefix = c_field.fieldname
             
             if temp_doc_type:
@@ -73,10 +73,11 @@ def get_company_naming_series(doc):
         return None
 
     series_prefix = None
+    is_return_doc = frappe.cint(doc.get("is_return"))
     for row in child_rows:
         if row.get(doc_type_fieldname) == doc.doctype:
-            if getattr(doc, "is_return", False):
-                if row.get("is_return") and row.get("return_naming_series"):
+            if is_return_doc:
+                if frappe.cint(row.get("is_return")) and row.get("return_naming_series"):
                     series_prefix = row.get("return_naming_series")
                 else:
                     return None
