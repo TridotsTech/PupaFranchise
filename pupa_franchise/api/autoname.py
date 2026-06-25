@@ -98,15 +98,30 @@ def get_company_naming_series(doc):
         digits = digit_match.group(1)
         if not is_year_string(digits):
             num_digits = len(digits)
-            hash_length = max(4, num_digits)
             prefix_without_digits = series_prefix[:-num_digits]
             
-            if not prefix_without_digits.endswith("."):
-                if prefix_without_digits.endswith("-") or prefix_without_digits.endswith("/"):
-                    prefix_without_digits = prefix_without_digits + "."
+            start_val = int(digits)
+            current_num = start_val + 1
+            final_name = None
+            while True:
+                formatted_num = str(current_num).zfill(num_digits)
+                proposed_name = f"{prefix_without_digits}{formatted_num}"
+                if not frappe.db.exists(doc.doctype, proposed_name):
+                    final_name = proposed_name
+                    break
+                current_num += 1
+            
+            try:
+                db_series_key = prefix_without_digits
+                res = frappe.db.sql("select `current` from tabSeries where name = %s", db_series_key)
+                if not res:
+                    frappe.db.sql("insert into tabSeries (name, `current`) values (%s, %s)", (db_series_key, current_num))
                 else:
-                    prefix_without_digits = prefix_without_digits + "-."
-            return f"{prefix_without_digits}{'#' * hash_length}"
+                    frappe.db.sql("update tabSeries set `current` = %s where name = %s", (current_num, db_series_key))
+            except Exception as e:
+                frappe.log_error(f"Error syncing tabSeries for {prefix_without_digits}: {str(e)}")
+
+            return final_name
 
     if series_prefix.endswith(".") or series_prefix.endswith("-") or series_prefix.endswith("/"):
         if not series_prefix.endswith("."):
@@ -123,7 +138,10 @@ def naming_series_creation(doc, method):
     # Try custom company naming series first
     series = get_company_naming_series(doc)
     if series:
-        doc.name = make_autoname(series)
+        if "#" in series:
+            doc.name = make_autoname(series)
+        else:
+            doc.name = series
         return
 
     # Fallback to default logic
