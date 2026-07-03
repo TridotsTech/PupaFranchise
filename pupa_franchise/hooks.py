@@ -45,7 +45,8 @@ app_license = "mit"
 # include js in doctype views
 doctype_js = {
     "Purchase Order":"public/js/purchase_order.js",
-    "Sales Invoice": "public/js/sales_invoice.js"
+    "Sales Invoice": "public/js/sales_invoice.js",
+    "Purchase Invoice": "public/js/purchase_invoice.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -207,6 +208,7 @@ doc_events = {
 		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
 	},
 	"Purchase Invoice": {
+		"validate": "pupa_franchise.utils.py.discount.update_rate_based_on_discount",
 		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
 	},
 	"Journal Entry": {
