@@ -15,25 +15,10 @@
   "default_franchise_company",
   "influencer_commission_item",
   "whatsapp_settings_tab",
-  "enable_whatsapp",
-  "token",
-  "column_break_jmhu",
-  "whatsapp_url",
   "sales_invoice_section",
-  "sales_message",
-  "sales_invoice_return",
+  "sales_invoice_whatsapp_template",
   "column_break_sjxh",
-  "sales_invoice_print_format",
-  "daily_report_section",
-  "daily_report_message",
-  "column_break_adtj",
-  "report_message_to",
-  "payment_message_section",
-  "payment_paid",
-  "column_break_tztk",
-  "payment_receive",
-  "sales_person_report_section",
-  "send_sales_person_report"
+  "sales_invoice_print_format"
  ],
  "fields": [
   {
@@ -91,35 +76,16 @@
    "label": "Whatsapp Settings"
   },
   {
-   "default": "0",
-   "fieldname": "enable_whatsapp",
-   "fieldtype": "Check",
-   "label": "Enable Whatsapp"
-  },
-  {
-   "fieldname": "column_break_jmhu",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "whatsapp_url",
-   "fieldtype": "Data",
-   "label": "WhatsApp URL"
-  },
-  {
-   "fieldname": "token",
-   "fieldtype": "Data",
-   "label": "Token"
-  },
-  {
    "collapsible": 1,
    "fieldname": "sales_invoice_section",
    "fieldtype": "Section Break",
    "label": "Sales Invoice"
   },
   {
-   "fieldname": "sales_message",
-   "fieldtype": "Small Text",
-   "label": "Sales Invoice Message"
+   "fieldname": "sales_invoice_whatsapp_template",
+   "fieldtype": "Link",
+   "label": "Sales Invoice WhatsApp Template",
+   "options": "WhatsApp Templates"
   },
   {
    "fieldname": "column_break_sjxh",
@@ -131,63 +97,6 @@
    "label": "Sales Invoice Print Format",
    "link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Sales Invoice\"]]",
    "options": "Print Format"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "daily_report_section",
-   "fieldtype": "Section Break",
-   "label": "Daily Report"
-  },
-  {
-   "fieldname": "daily_report_message",
-   "fieldtype": "Small Text",
-   "label": "Daily Report Message"
-  },
-  {
-   "fieldname": "column_break_adtj",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "report_message_to",
-   "fieldtype": "Table",
-   "label": "Report Message To",
-   "options": "Report Message To"
-  },
-  {
-   "fieldname": "sales_person_report_section",
-   "fieldtype": "Section Break",
-   "label": "Sales Person Report"
-  },
-  {
-   "default": "0",
-   "fieldname": "send_sales_person_report",
-   "fieldtype": "Check",
-   "label": "Send Sales Person Report"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "payment_message_section",
-   "fieldtype": "Section Break",
-   "label": "Payment Message"
-  },
-  {
-   "fieldname": "payment_paid",
-   "fieldtype": "Small Text",
-   "label": "Payment Paid"
-  },
-  {
-   "fieldname": "column_break_tztk",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "payment_receive",
-   "fieldtype": "Small Text",
-   "label": "Payment Receive"
-  },
-  {
-   "fieldname": "sales_invoice_return",
-   "fieldtype": "Small Text",
-   "label": "Sales Invoice Return"
   }
  ],
  "grid_page_length": 50,
