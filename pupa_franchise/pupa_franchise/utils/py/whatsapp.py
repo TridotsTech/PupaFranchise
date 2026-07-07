@@ -24,16 +24,14 @@ def sales_invoice_whatsapp(name, doctype="Sales Invoice"):
     if doc.docstatus != 1:
         frappe.throw("Sales Invoice must be submitted to send WhatsApp.")
         
-    # Get mobile number from contact_mobile or fallback to customer mobile_no
-    raw_mobile = doc.contact_mobile or frappe.get_value("Customer", doc.customer, "mobile_no")
+    # Get mobile number from contact_mobile; throw error if not set
+    raw_mobile = doc.contact_mobile
     if not raw_mobile:
-        frappe.msgprint("There is no Whatsapp Number in customer or contact_mobile to send message.")
-        return
+        frappe.throw("There is no Whatsapp Number in contact_mobile to send message.")
         
     clean_mobile = get_10_digit_mobile(raw_mobile)
     if not clean_mobile:
-        frappe.msgprint(f"Invalid WhatsApp mobile number: {raw_mobile}")
-        return
+        frappe.throw(f"Invalid WhatsApp mobile number: {raw_mobile}")
     mobile_no = "91" + clean_mobile
 
     # Check if a successful WhatsApp Message already exists for this document
@@ -88,17 +86,13 @@ def sales_invoice_whatsapp(name, doctype="Sales Invoice"):
 
     # Define template parameters explicitly in body_param mapping to template placeholder names
     body_param_dict = {
-        "customer_name": doc.customer_name,
-        "invoice_date": formatdate(doc.posting_date, "dd-mm-yyyy"),
-        "invoice_number": doc.name,
-        "amount": str(doc.grand_total),
-        "total_outstanding": str(total_unpaid)
+        "customer_name": doc.customer_name
     }
 
     # Ensure the WhatsApp Template in the DB has sample_values set so that the parameters are processed
     template = frappe.get_doc("WhatsApp Templates", template_name)
     if not template.sample_values:
-        template.db_set("sample_values", "customer_name,invoice_date,invoice_number,amount,total_outstanding")
+        template.db_set("sample_values", "customer_name")
 
     # Create WhatsApp Message using the template
     wa_message = frappe.get_doc({
