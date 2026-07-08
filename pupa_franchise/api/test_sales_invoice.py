@@ -167,6 +167,42 @@ class TestCreatePIForInfluencerSI(FrappeTestCase):
         frappe.delete_doc("Sales Invoice", si.name, force=True)
         frappe.db.commit()
 
+    def test_influencer_pi_created_with_zero_percent_commission(self):
+        """SI with 0% influencer commission should create PI with 0 amount."""
+        from pupa_franchise.api.sales_invoice import create_pi_for_influencer_si
+
+        # Use a different supplier to avoid price fetching from history
+        other_supplier = "_Test Influencer Supplier 4"
+        if not frappe.db.exists("Supplier", other_supplier):
+            frappe.get_doc({
+                "doctype": "Supplier",
+                "supplier_name": other_supplier,
+                "supplier_group": frappe.db.get_value("Supplier Group", {}, "name") or "All Supplier Groups",
+            }).insert(ignore_permissions=True)
+
+        si = self._create_test_si(with_influencer=True, influencer_rows=[
+            {"supplier": other_supplier, "commission_percentage": 0.0}
+        ])
+
+        result = create_pi_for_influencer_si(si.name)
+
+        self.assertIsNotNone(result, "create_pi_for_influencer_si returned None instead of a list")
+        self.assertEqual(len(result), 1, "PI was not created for 0% commission")
+
+        if len(result) > 0:
+            pi = frappe.get_doc("Purchase Invoice", result[0])
+            self.assertEqual(pi.supplier, other_supplier)
+            for item in pi.items:
+                if item.item_code == self.item_code:
+                    self.assertAlmostEqual(item.rate, 0.0, places=2)
+
+            # Cleanup PI
+            frappe.delete_doc("Purchase Invoice", result[0], force=True)
+
+        # Cleanup SI
+        frappe.delete_doc("Sales Invoice", si.name, force=True)
+        frappe.db.commit()
+
     def test_influencer_pi_created_with_correct_commission_based_on_total(self):
         """SI with influencer details should create PI with commission calculated using 'total', not 'grand_total'."""
         from pupa_franchise.api.sales_invoice import create_pi_for_influencer_si
