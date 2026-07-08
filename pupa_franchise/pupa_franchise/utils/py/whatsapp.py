@@ -64,25 +64,27 @@ def sales_invoice_whatsapp(name, doctype="Sales Invoice"):
     print_format = pupa_settings.sales_invoice_print_format
     template_name = pupa_settings.sales_invoice_whatsapp_template
 
-    # Build PDF attachment URL using request host/ngrok url if available
-    key = doc.get_document_share_key()
-    
-    # Build the URL manually with proper URL encoding to avoid spaces in query params
+    # Generate the PDF content of the invoice
+    fcontent = frappe.get_print(doc=doc, as_pdf=1, no_letterhead=0, print_format=print_format)
+    pdf_file_name = f"{doc.name.replace('/', '-')}.pdf"
+
+    # Create a public File document
+    _file = frappe.get_doc({
+        "doctype": "File",
+        "file_name": pdf_file_name,
+        "content": fcontent,
+        "is_private": 0
+    })
+    _file.insert(ignore_permissions=True)
+
+    # Build the absolute URL forcing HTTPS for Meta
     base_url = frappe.utils.get_url()
     if hasattr(frappe, "request") and frappe.request:
         base_url = frappe.request.url_root.rstrip("/")
 
-    # Force HTTPS — Meta requires it, and ngrok always exposes HTTPS even if internally HTTP
+    # Force HTTPS — Meta requires it
     base_url = base_url.replace("http://", "https://")
-
-    query_params = urllib.parse.urlencode({
-        "doctype": doctype,
-        "name": name,
-        "format": print_format,
-        "no_letterhead": 0,
-        "key": key
-    })
-    url = f"{base_url}/api/method/frappe.utils.print_format.download_pdf?{query_params}"
+    url = base_url + _file.file_url
 
     # Define template parameters explicitly in body_param mapping to template placeholder names
     body_param_dict = {
