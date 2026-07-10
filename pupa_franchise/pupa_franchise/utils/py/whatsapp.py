@@ -8,10 +8,21 @@ from erpnext.accounts.party import get_dashboard_info
 
 # ------------------- HELPER FUNCTIONS -------------------
 
-def get_10_digit_mobile(mobile_no):
-    # Remove all non-digit characters and take last 10 digits (for Indian numbers)
-    digits = re.sub(r"\D", "", str(mobile_no or ""))
-    return digits[-10:] if len(digits) >= 10 else None
+def get_formatted_whatsapp_mobile(mobile_no):
+    if not mobile_no:
+        return None
+    # Strip spaces, dashes, parentheses and '+'
+    cleaned = re.sub(r"[\s\-\(\)\+]", "", str(mobile_no))
+    
+    # If it starts with 91 and has 12 digits, keep it as is
+    if cleaned.startswith("91") and len(cleaned) == 12:
+        return cleaned
+        
+    # If it is a 10-digit number, prepend 91
+    if len(cleaned) == 10:
+        return "91" + cleaned
+
+    return None
 
 
 # ------------------- SALES INVOICE WHATSAPP -------------------
@@ -29,10 +40,9 @@ def sales_invoice_whatsapp(name, doctype="Sales Invoice"):
     if not raw_mobile:
         frappe.throw("There is no Whatsapp Number in contact_mobile to send message.")
         
-    clean_mobile = get_10_digit_mobile(raw_mobile)
-    if not clean_mobile:
+    mobile_no = get_formatted_whatsapp_mobile(raw_mobile)
+    if not mobile_no:
         frappe.throw(f"Invalid WhatsApp mobile number: {raw_mobile}")
-    mobile_no = "91" + clean_mobile
 
     # Check if a successful WhatsApp Message already exists for this document
     existing_msg = frappe.db.exists("WhatsApp Message", {
