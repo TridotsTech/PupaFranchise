@@ -46,7 +46,8 @@ app_license = "mit"
 doctype_js = {
     "Purchase Order":"public/js/purchase_order.js",
     "Sales Invoice": "public/js/sales_invoice.js",
-    "Purchase Invoice": "public/js/purchase_invoice.js"
+    "Purchase Invoice": "public/js/purchase_invoice.js",
+    "Journal Entry": "public/js/journal_entry.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -212,7 +213,8 @@ doc_events = {
 		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
 	},
 	"Journal Entry": {
-		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
+		"autoname": "pupa_franchise.api.autoname.naming_series_creation",
+		"before_validate": "pupa_franchise.utils.py.journal_entry.debit_credit_zerorows_delete"
 	},
 	"Stock Entry": {
 		"autoname": "pupa_franchise.api.autoname.naming_series_creation"
