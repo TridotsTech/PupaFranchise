@@ -1,0 +1,14 @@
+..F.
+======================================================================
+FAIL: test_influencer_pi_created_with_zero_percent_commission (pupa_franchise.api.test_sales_invoice.TestCreatePIForInfluencerSI.test_influencer_pi_created_with_zero_percent_commission)
+SI with 0% influencer commission should create PI with 0 amount.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/britvasan/motovolt-bench/apps/pupa_franchise/pupa_franchise/api/test_sales_invoice.py", line 189, in test_influencer_pi_created_with_zero_percent_commission
+    self.assertAlmostEqual(item.rate, 0.0, places=2)
+AssertionError: 100.0 != 0.0 within 2 places (100.0 difference)
+
+----------------------------------------------------------------------
+Ran 4 tests in 4.182s
+
+FAILED (failures=1)

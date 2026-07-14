@@ -175,3 +175,43 @@ def get_tax_table_sales_invoice(doctype,doc):
 			])
 
 	return {'tax_category': pos.tax_category, 'tax_rows': final_table}
+
+
+@frappe.whitelist()
+def make_purchase_order(source_name, target_doc=None):
+	from frappe.model.mapper import get_mapped_doc
+
+	supplier = frappe.db.get_single_value("Franchise Settings", "default_supplier")
+	if not supplier:
+		frappe.throw(_("Please set Default Supplier in Franchise Settings"))
+
+	def set_missing_values(source, target):
+		target.supplier = supplier
+		target.buying_price_list = "Standard Buying"
+		for item in target.items:
+			item.schedule_date = source.posting_date or today()
+
+	doclist = get_mapped_doc(
+		"Sales Invoice",
+		source_name,
+		{
+			"Sales Invoice": {
+				"doctype": "Purchase Order",
+				"field_no_map": ["naming_series"],
+			},
+			"Sales Invoice Item": {
+				"doctype": "Purchase Order Item",
+				"field_map": {
+					"rate": "rate",
+					"qty": "qty",
+					"item_code": "item_code",
+					"uom": "uom"
+				},
+			},
+		},
+		target_doc,
+		set_missing_values,
+	)
+
+	return doclist
+

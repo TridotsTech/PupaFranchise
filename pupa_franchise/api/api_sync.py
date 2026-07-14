@@ -323,6 +323,30 @@ def create_so_from_franchise_po(doc, method):
         frappe.throw(f"Error syncing PO to Pupa Sales Order: {str(e)}")
         
 
+def get_primary_address(link_doctype, link_name):
+    address_links = frappe.db.get_all(
+        "Dynamic Link",
+        filters={
+            "link_doctype": link_doctype,
+            "link_name": link_name,
+            "parenttype": "Address"
+        },
+        fields=["parent"]
+    )
+    if not address_links:
+        return None
+    
+    # Try to find primary address first
+    for link in address_links:
+        address_name = link.parent
+        is_primary = frappe.db.get_value("Address", address_name, "is_primary_address")
+        if is_primary:
+            return address_name
+
+    # Return the first one
+    return address_links[0].parent
+
+
 @frappe.whitelist()
 def create_purchase_invoice(company=None, posting_date=None, due_date=None, 
     custom_sales_invoice_id=None, custom_franchise_po_id=None, 
@@ -352,6 +376,25 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
         if isinstance(items, str):
             items = json.loads(items)
 
+        # Get tax category and template from Franchise Settings
+        settings = frappe.get_doc("Franchise Settings")
+        tax_category = settings.tax_category
+        if not tax_category:
+            frappe.throw("Please configure Tax Category in Franchise Settings")
+
+        taxes_and_charges = settings.purchase_taxes_and_charges_template
+        if not taxes_and_charges:
+            frappe.throw("Please configure Purchase Taxes and Charges Template in Franchise Settings")
+
+        # Retrieve addresses
+        supplier_address = get_primary_address("Supplier", supplier_data)
+        if not supplier_address:
+            frappe.throw(f"Please configure Address for Supplier '{supplier_data}'")
+
+        company_address = get_primary_address("Company", local_company)
+        if not company_address:
+            frappe.throw(f"Please configure Address for Company '{local_company}'")
+
         pi = frappe.new_doc("Purchase Invoice")
         pi.supplier = supplier_data
         pi.company = local_company
@@ -362,6 +405,17 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
         pi.bill_date = posting_date
         pi.update_stock = 1
         pi.ignore_pricing_rule = 1
+
+        if supplier_address:
+            pi.supplier_address = supplier_address
+        if company_address:
+            pi.billing_address = company_address
+            pi.shipping_address = company_address
+
+        if tax_category:
+            pi.tax_category = tax_category
+        if taxes_and_charges:
+            pi.taxes_and_charges = taxes_and_charges
 
         for item in items:
             item_code = item.get("item_code")
@@ -392,6 +446,10 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
                 "amount": item.get("amount"),
                 "warehouse": default_warehouse
             })
+
+        # Load tax rows and recalculate totals
+        pi.onload()
+        pi.calculate_taxes_and_totals()
 
         pi.flags.ignore_mandatory = True
         pi.insert(ignore_permissions=True)

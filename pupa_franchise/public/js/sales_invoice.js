@@ -22,6 +22,15 @@ frappe.ui.form.on('Sales Team', {
 
 frappe.ui.form.on('Sales Invoice', {
     refresh(frm) {
+        if (frm.doc.docstatus === 1) {
+            frm.add_custom_button(__('Purchase Order'), function () {
+                frappe.model.open_mapped_doc({
+                    method: 'pupa_franchise.api.sales_invoice.make_purchase_order',
+                    frm: frm
+                });
+            }, __('Create'));
+        }
+
         if (frm.doc.docstatus === 1 && frm.doc.custom_message_status === "Not Sent") {
             frm.add_custom_button(__('Send WhatsApp'), function () {
                 frappe.call({
