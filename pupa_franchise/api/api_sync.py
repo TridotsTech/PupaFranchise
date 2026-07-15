@@ -444,7 +444,11 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
                 "uom": item.get("uom"),
                 "rate": item.get("rate"),
                 "amount": item.get("amount"),
-                "warehouse": default_warehouse
+                "warehouse": default_warehouse,
+                "price_list_rate": item.get("price_list_rate"),
+                "custom_mrp": item.get("custom_mrp"),
+                "custom_mrp_discount_percentage": item.get("custom_mrp_discount_percentage"),
+                "custom_ts_discount_amount": item.get("custom_ts_discount_amount")
             })
 
         # Load tax rows and recalculate totals
