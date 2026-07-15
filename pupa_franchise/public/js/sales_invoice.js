@@ -21,6 +21,12 @@ frappe.ui.form.on('Sales Team', {
 });
 
 frappe.ui.form.on('Sales Invoice', {
+    custom_do_you_have_any_influencer: function (frm) {
+        if (frm.doc.custom_do_you_have_any_influencer !== "Yes") {
+            frm.clear_table("custom_influencer_commission_details");
+            frm.refresh_field("custom_influencer_commission_details");
+        }
+    },
     refresh(frm) {
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__('Purchase Order'), function () {

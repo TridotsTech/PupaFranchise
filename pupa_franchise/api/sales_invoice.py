@@ -43,14 +43,17 @@ def get_sales_person_mobile(sales_person):
 def create_pi_for_influencer_si(si_name):
     si = frappe.get_doc("Sales Invoice", si_name)
 
-    if not si.custom_do_you_have_any_influencer:
+    if si.custom_do_you_have_any_influencer != "Yes":
+        return
+        
+    # Don't create influencer commission PI for credit notes / sales returns
+    if si.is_return:
         return
 
     influencer_rows = si.get("custom_influencer_commission_details")
 
     if not influencer_rows:
-        frappe.msgprint("No Influencer Commission Details Found")
-        return
+        frappe.throw("No Influencer Commission Details Found")
 
     # Get the service item from Franchise Settings
     commission_item = frappe.db.get_single_value("Franchise Settings", "influencer_commission_item")

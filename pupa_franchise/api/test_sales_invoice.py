@@ -154,14 +154,13 @@ class TestCreatePIForInfluencerSI(FrappeTestCase):
         frappe.delete_doc("Sales Invoice", si.name, force=True)
         frappe.db.commit()
 
-    def test_influencer_flag_but_no_rows_returns_none(self):
-        """SI with influencer flag but no commission details should return None."""
+    def test_influencer_flag_but_no_rows_throws_error(self):
+        """SI with influencer flag but no commission details should throw ValidationError."""
         from pupa_franchise.api.sales_invoice import create_pi_for_influencer_si
 
         si = self._create_test_si(with_influencer=True, influencer_rows=[])
 
-        result = create_pi_for_influencer_si(si.name)
-        self.assertIsNone(result)
+        self.assertRaises(frappe.ValidationError, create_pi_for_influencer_si, si.name)
 
         # Cleanup
         frappe.delete_doc("Sales Invoice", si.name, force=True)
