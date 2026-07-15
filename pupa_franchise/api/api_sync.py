@@ -761,14 +761,19 @@ def _update_draft_pos_for_pricing_rule(pricing_rule_name):
 
 
 @frappe.whitelist()
-def get_pupa_warehouses():
+def get_pupa_warehouses(company=None):
     """Fetch the franchise allowed warehouses from Pupa (HQ) instance."""
     try:
         base_url, headers = get_api_settings()
 
+        params = {}
+        if company:
+            params["company"] = company
+
         response = requests.get(
             url=f"{base_url}/api/method/pupa.api.franchise.get_franchise_allowed_warehouses",
-            headers=headers
+            headers=headers,
+            params=params
         )
 
         if response.status_code != 200:
