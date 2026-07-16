@@ -451,8 +451,7 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
                 "custom_ts_discount_amount": item.get("custom_ts_discount_amount")
             })
 
-        # Load tax rows and recalculate totals
-        pi.onload()
+        # Recalculate totals
         pi.calculate_taxes_and_totals()
 
         pi.flags.ignore_mandatory = True
