@@ -416,6 +416,7 @@ def create_purchase_invoice(company=None, posting_date=None, due_date=None,
             pi.tax_category = tax_category
         if taxes_and_charges:
             pi.taxes_and_charges = taxes_and_charges
+            pi.append_taxes_from_master()
 
         for item in items:
             item_code = item.get("item_code")
