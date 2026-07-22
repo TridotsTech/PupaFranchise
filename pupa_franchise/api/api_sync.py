@@ -770,24 +770,45 @@ def get_pupa_warehouses(company=None):
     try:
         base_url, headers = get_api_settings()
 
-        params = {}
-        if company:
-            params["company"] = company
-
         response = requests.get(
-            url=f"{base_url}/api/method/pupa.api.franchise.get_franchise_allowed_warehouses",
+            url=f"{base_url}/api/method/frappe.client.get",
             headers=headers,
-            params=params
+            params={"doctype": "Pupa Settings"}
         )
 
         if response.status_code != 200:
             frappe.log_error(
                 message=f"Status: {response.status_code}\nResponse: {response.text}",
-                title="Pupa Warehouse Fetch Error"
+                title="Pupa Settings Fetch Error"
             )
             return []
 
-        return response.json().get("message", [])
+        doc = response.json().get("message", {})
+        allowed_warehouses = doc.get("franchise_allowed_warehouse", [])
+
+        def normalize_name(name):
+            if not name:
+                return ""
+            return "".join(c.lower() for c in name if c.isalnum())
+
+        if company:
+            target_company = normalize_name(company)
+            warehouses = [
+                row.get("warehouse")
+                for row in allowed_warehouses
+                if normalize_name(row.get("company")) == target_company
+            ]
+        else:
+            warehouses = [row.get("warehouse") for row in allowed_warehouses]
+
+        seen = set()
+        unique_warehouses = []
+        for w in warehouses:
+            if w and w not in seen:
+                seen.add(w)
+                unique_warehouses.append(w)
+
+        return unique_warehouses
 
     except Exception as e:
         frappe.log_error(

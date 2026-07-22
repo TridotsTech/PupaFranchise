@@ -45,6 +45,7 @@ frappe.query_reports["Pupa Stock Balance Summary"] = {
 			fieldtype: "Select",
 			options: "",
 			reqd: 1,
+			width: 300,
 			on_change: function () {
 				frappe.query_report.refresh();
 			}

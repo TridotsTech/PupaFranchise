@@ -48,16 +48,6 @@ def sales_invoice_whatsapp(name, doctype="Sales Invoice"):
     if not mobile_no:
         frappe.throw(_(f"Invalid WhatsApp Number: {raw_mobile}"))
 
-    # existing_msg = frappe.db.exists("WhatsApp Message", {
-    #     "reference_doctype": doctype,
-    #     "reference_name": name,
-    #     "status": "Success"
-    # })
-
-    # if existing_msg:
-    #     frappe.msgprint(_("WhatsApp message already sent to the customer."), alert=True)
-    #     return
-
     whatsapp_settings = frappe.get_single("Franchise Settings")
 
     if not whatsapp_settings.sales_invoice_print_format:
@@ -105,7 +95,6 @@ def sales_invoice_whatsapp(name, doctype="Sales Invoice"):
     whatsapp_message = frappe.get_doc({
         "doctype": "WhatsApp Message",
         "label": name,
-        "status": "Success",
         "to": mobile_no,
         "type": "Outgoing",
         "reference_doctype": doctype,
