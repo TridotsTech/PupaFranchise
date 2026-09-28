@@ -3,17 +3,19 @@ from erpnext.stock import get_item_details as eid
 
 
 @frappe.whitelist()
-def get_item_details(args, doc=None, for_validate=False, overwrite_warehouse=True):
+def get_item_details(args=None, doc=None, for_validate=False, overwrite_warehouse=True, ctx=None, **kwargs):
     """
     Override of erpnext.stock.get_item_details.get_item_details
     Filters Item Price by custom_company to ensure each company
     only fetches its own price list rates in buying/selling transactions.
     """
+    args = ctx if ctx else args
+
     original_get_item_price = eid.get_item_price
 
-    def company_filtered_get_item_price(args, item_code, ignore_party=False, force_batch_no=False):
-        results = original_get_item_price(args, item_code, ignore_party, force_batch_no)
-        company = args.get("company")
+    def company_filtered_get_item_price(price_args, item_code, ignore_party=False, force_batch_no=False):
+        results = original_get_item_price(price_args, item_code, ignore_party, force_batch_no)
+        company = price_args.get("company")
 
         if not company or not results:
             return results
@@ -35,7 +37,12 @@ def get_item_details(args, doc=None, for_validate=False, overwrite_warehouse=Tru
 
     eid.get_item_price = company_filtered_get_item_price
     try:
-        result = eid.get_item_details(args, doc, for_validate, overwrite_warehouse)
+        import inspect
+        if "ctx" in inspect.signature(eid.get_item_details).parameters:
+            result = eid.get_item_details(ctx=args, doc=doc, for_validate=for_validate, overwrite_warehouse=overwrite_warehouse)
+        else:
+            result = eid.get_item_details(args=args, doc=doc, for_validate=for_validate, overwrite_warehouse=overwrite_warehouse)
+            
         args_dict = frappe.parse_json(args) or {}
         item_code = args_dict.get("item_code")
         if result and isinstance(result, dict) and item_code:
